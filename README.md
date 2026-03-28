@@ -1,69 +1,85 @@
 # 🏥 PostVisit — AI-Powered Healthcare Platform
 
-> Upload medical reports. Get AI-powered insights. Track your health. Chat with your doctor's AI.
+🌐 **Live Demo:** https://postvisit-healthcare.onrender.com
 
+> Upload medical reports. Get AI-powered insights. Track your health. Chat with your doctor's AI.
 
 ---
 
 ## ✨ Features
 
-| Feature                 | Description                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| 🔐 **Auth System**      | JWT + bcrypt, role-based access (user/admin), secure sessions              |
-| 📄 **Report Upload**    | PDF + image uploads via Cloudinary with signed URLs                        |
-| 🤖 **AI Analysis**      | Gemini AI + intelligent mock engine — summaries, findings, recommendations |
-| 🔬 **OCR Extraction**   | Auto-extract blood sugar, cholesterol, hemoglobin, BP from reports         |
-| 📊 **Health Dashboard** | 4 Chart.js charts — trends in sugar, cholesterol, hemoglobin, BP           |
-| 💬 **AI Chatbot**       | Context-aware health chatbot with chat history per session                 |
-| ⚠️ **Risk Prediction**  | Rule-based engine for diabetes, heart disease, anemia, kidney risk         |
-| 🔔 **Smart Reminders**  | Medication reminders + follow-up alerts via in-app system                  |
-| 📑 **PDF Export**       | Downloadable health reports with analysis, risk assessment, advice         |
-| 📉 **CSV Export**       | Export all health metrics as CSV                                           |
-| 🛡️ **Security**        | Helmet.js, rate limiting, NoSQL sanitization, audit logs, signed URLs      |
-| 👨‍💼 **Admin Panel**   | User management, audit log viewer, system stats                            |
-| 🌙 **Dark Mode**        | Full dark/light theme toggle                                               |
-| 📱 **Responsive**       | Mobile-first design                                                        |
+* 🔐 **Authentication System**
+  JWT-based authentication with bcrypt hashing, role-based access (user/admin), and secure sessions.
+
+* 📄 **Medical Report Upload**
+  Upload PDF and image reports using Cloudinary with secure signed URLs.
+
+* 🤖 **AI-Powered Analysis**
+  Integrated with Gemini AI + intelligent fallback engine for:
+
+  * Report summaries
+  * Key findings
+  * Personalized recommendations
+
+* 🔬 **OCR Data Extraction**
+  Automatically extracts medical values like:
+
+  * Blood sugar
+  * Cholesterol
+  * Hemoglobin
+  * Blood pressure
+
+* 📊 **Health Dashboard**
+  Interactive charts (Chart.js) showing trends over time.
+
+* 💬 **AI Chatbot**
+  Context-aware chatbot with session-based history.
+
+* ⚠️ **Risk Prediction Engine**
+  Detects risks for:
+
+  * Diabetes
+  * Heart disease
+  * Anemia
+  * Kidney issues
+
+* 🔔 **Smart Notifications**
+  Medication reminders and follow-up alerts.
+
+* 📑 **Export Options**
+
+  * PDF health reports
+  * CSV data export
+
+* 🛡️ **Security Features**
+  Helmet.js, rate limiting, input validation, NoSQL injection protection.
+
+* 👨‍💼 **Admin Panel**
+  Manage users, monitor activity, view system logs.
+
+* 🌙 **Dark Mode + Responsive UI**
+  Fully mobile-friendly design.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Live Deployment
 
-### Prerequisites
+The application is deployed on **Render** and can be accessed here:
 
-* Node.js 18+
-* MongoDB (local or Atlas)
-* (Optional) Cloudinary account
-* (Optional) Gemini API key
+👉 https://postvisit-healthcare.onrender.com
 
-### Installation
-
-```bash
-# 1. Clone and enter directory
-git clone <your-repo>
-cd postvisit
-
-# 2. Install dependencies
-npm install
-
-# 3. Set up environment
-cp .env.example .env
-# Edit .env with your values (minimum: MONGODB_URI + JWT_SECRET)
-
-# 4. Start development server
-npm run dev
-```
+⚠️ *Note:* Free tier may take 30–50 seconds to wake up after inactivity.
 
 ---
 
-## 🔧 Minimum .env (no cloud services required)
+## ⚙️ Tech Stack
 
-```env
-NODE_ENV=development
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/postvisit
-JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters
-SESSION_SECRET=your_session_secret_key
-```
+* **Backend:** Node.js, Express.js
+* **Database:** MongoDB Atlas
+* **Frontend:** EJS, CSS, JavaScript
+* **AI Integration:** Gemini API
+* **File Storage:** Cloudinary
+* **Charts:** Chart.js
 
 ---
 
@@ -71,148 +87,98 @@ SESSION_SECRET=your_session_secret_key
 
 ```
 postvisit/
-├── app.js                          # Express app + server entry
-├── package.json
-├── .env.example
-│
+├── app.js
 ├── config/
-│   ├── database.js                 # MongoDB connection
-│   └── cloudinary.js               # Cloudinary + Multer config
-│
-├── models/
-│   ├── User.js                     # User schema (auth, profile, health info)
-│   ├── Report.js                   # Medical report + extracted values
-│   ├── Analysis.js                 # AI analysis results
-│   └── index.js                    # Notification, HealthMetrics, ChatMessage, AuditLog, Medication
-│
 ├── controllers/
-│   ├── authController.js           # Register, login, logout, profile
-│   ├── reportController.js         # Upload, view, delete, export
-│   ├── dashboardController.js      # Analytics, chart data
-│   └── chatController.js           # AI chatbot with context
-│
-├── routes/
-│   ├── authRoutes.js
-│   ├── dashboardRoutes.js
-│   ├── reportRoutes.js
-│   ├── chatRoutes.js
-│   ├── notificationRoutes.js
-│   ├── adminRoutes.js
-│   └── apiRoutes.js                # REST API v1
-│
 ├── middleware/
-│   ├── auth.js                     # JWT protect, authorize, audit log
-│   └── validation.js               # express-validator rules
-│
+├── models/
+├── routes/
 ├── services/
-│   ├── ai/
-│   │   └── aiService.js            # Gemini + mock AI engine + chatbot
-│   ├── ocr/
-│   │   └── ocrService.js           # Text extraction + medical value parsing
-│   ├── pdf/
-│   │   └── pdfService.js           # PDFKit report generation
-│   └── notifications/
-│       └── cronService.js          # node-cron scheduled jobs
-│
-├── views/                          # EJS templates
-│   ├── landing.ejs
-│   ├── partials/
-│   │   ├── header.ejs
-│   │   └── footer.ejs
-│   ├── auth/
-│   ├── dashboard/
-│   ├── reports/
-│   ├── chat/
-│   ├── notifications/
-│   ├── admin/
-│   └── errors/
-│
+├── views/
 ├── public/
-│   ├── css/
-│   └── js/
-│
 └── utils/
 ```
 
 ---
 
-## 🔌 API Reference (v1)
+## 🔧 Environment Variables
 
-All endpoints require `Authorization: Bearer <token>` or cookie.
-
-| Method | Endpoint                      | Description                    |
-| ------ | ----------------------------- | ------------------------------ |
-| GET    | `/api/v1/metrics`             | Health metrics history         |
-| GET    | `/api/v1/notifications/count` | Unread notification count      |
-| GET    | `/api/v1/reports/summary`     | Report statistics              |
-| GET    | `/dashboard/analytics`        | Chart data (query: `?days=90`) |
-| POST   | `/chat/message`               | Send AI chat message           |
-| GET    | `/reports/export/csv`         | Export health data as CSV      |
-| GET    | `/reports/:id/download`       | Download PDF report            |
-
----
-
-## 🤖 AI Engine
-
-The AI service has two modes:
-
-### Gemini Mode (set `GEMINI_API_KEY` in .env):
-
-* Uses Gemini models for report analysis
-* Structured responses with medical insights
-* Context-aware chatbot with patient history
-
-### Mock AI Mode (no API key needed):
-
-* Intelligent rule-based analysis engine
-* Parses medical values and generates realistic insights
-* Risk prediction for diabetes, heart disease, anemia, kidney issues
-* Pattern-matched chatbot responses
-
----
-
-## 🔒 Security Features
-
-* **Helmet.js**
-* **Rate Limiting**
-* **NoSQL Injection Prevention**
-* **JWT Authentication**
-* **bcrypt Password Hashing**
-* **Signed URLs (Cloudinary)**
-* **Audit Logs**
-* **Input Validation**
-* **CORS Configuration**
-
----
-
-## ☁️ Deployment
-
-### Environment Variables for Production
+Create a `.env` file with the following:
 
 ```env
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_secret_key
+SESSION_SECRET=your_session_secret
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+GEMINI_API_KEY=your_api_key
 NODE_ENV=production
-MONGODB_URI=mongodb+srv://...
-JWT_SECRET=<min 64 char random string>
-SESSION_SECRET=<min 64 char random string>
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-GEMINI_API_KEY=your_api_key_here
 ```
+
+---
+
+## ▶️ Run Locally
+
+```bash
+git clone https://github.com/your-username/postvisit-healthcare.git
+cd postvisit-healthcare
+npm install
+npm run dev
+```
+
+---
+
+## 🧪 Production Run
+
+```bash
+npm start
+```
+
+---
+
+## 🔌 API Endpoints (Sample)
+
+| Method | Endpoint                | Description    |
+| ------ | ----------------------- | -------------- |
+| GET    | /api/v1/metrics         | Health metrics |
+| GET    | /api/v1/reports/summary | Report summary |
+| POST   | /chat/message           | AI chatbot     |
+| GET    | /reports/export/csv     | Export CSV     |
+| GET    | /reports/:id/download   | Download PDF   |
+
+---
+
+## 🔒 Security
+
+* JWT Authentication
+* Password hashing with bcrypt
+* Rate limiting
+* Helmet.js protection
+* Input validation & sanitization
 
 ---
 
 ## ⚠️ Disclaimer
 
-PostVisit AI provides health information for educational purposes only. It is **not a substitute** for professional medical advice, diagnosis, or treatment.
+This application provides **AI-based health insights for educational purposes only** and is **not a substitute for professional medical advice**.
 
 ---
 
 ## 📄 License
 
-MIT License — free to use, modify, and distribute.
+MIT License
 
 ---
 
+## 👨‍💻 Author
 
-*Built with ❤️ for better health outcomes*
+**Anas Viquaruddin**
+GitHub: https://github.com/Anas2694
+
+---
+
+⭐ *If you like this project, consider starring the repo!*
+
