@@ -1,0 +1,146 @@
+<!-- =====================================================
+  views/auth/profile.ejs
+  ===================================================== -->
+<%- include('../partials/header') %>
+
+<div class="profile-grid">
+  <!-- Left: Profile Card -->
+  <div>
+    <div class="profile-card">
+      <div class="profile-avatar-section">
+        <div class="profile-avatar">
+          <% if (user.avatar) { %>
+            <img src="<%= user.avatar %>" alt="Avatar">
+          <% } else { %>
+            <%= user.firstName[0] %><%= user.lastName[0] %>
+          <% } %>
+        </div>
+        <div class="profile-name"><%= user.firstName %> <%= user.lastName %></div>
+        <div class="profile-email"><%= user.email %></div>
+        <div class="profile-role"><%= user.role %></div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat__num" data-count-to="<%= user.totalReports %>"><%= user.totalReports %></div>
+          <div class="profile-stat__label">Total Reports</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat__num" data-count-to="<%= user.loginCount %>"><%= user.loginCount %></div>
+          <div class="profile-stat__label">Logins</div>
+        </div>
+        <% if (user.age) { %>
+        <div class="profile-stat">
+          <div class="profile-stat__num"><%= user.age %></div>
+          <div class="profile-stat__label">Age</div>
+        </div>
+        <% } %>
+        <% if (user.bloodGroup) { %>
+        <div class="profile-stat">
+          <div class="profile-stat__num" style="font-size:16px;"><%= user.bloodGroup %></div>
+          <div class="profile-stat__label">Blood Group</div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="profile-card" style="margin-top: 16px;">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:14px;">Quick Actions</h4>
+      <a href="/reports/upload" class="btn btn--primary btn--full" style="margin-bottom:8px;"><i class="fas fa-upload"></i> Upload Report</a>
+      <a href="/reports" class="btn btn--outline btn--full" style="margin-bottom:8px;"><i class="fas fa-file-medical"></i> View Reports</a>
+      <a href="/chat" class="btn btn--ghost btn--full"><i class="fas fa-robot"></i> Ask AI Assistant</a>
+    </div>
+  </div>
+
+  <!-- Right: Edit Forms -->
+  <div>
+    <!-- Update Profile -->
+    <div class="profile-card" style="margin-bottom: 20px;">
+      <h3 style="font-size:17px; font-weight:700; margin-bottom:20px;"><i class="fas fa-user-edit" style="color:var(--primary);"></i> Update Profile</h3>
+      <form action="/auth/profile?_method=PUT" method="POST" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" name="firstName" value="<%= user.firstName %>" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" name="lastName" value="<%= user.lastName %>" class="form-input" required>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" name="phone" value="<%= user.phone || '' %>" class="form-input" placeholder="+91 9876543210">
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : '' %>" class="form-input">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Gender</label>
+            <select name="gender" class="form-input">
+              <option value="">Select</option>
+              <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>>Male</option>
+              <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>>Female</option>
+              <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Blood Group</label>
+            <select name="bloodGroup" class="form-input">
+              <option value="">Select</option>
+              <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(bg => { %>
+              <option value="<%= bg %>" <%= user.bloodGroup === bg ? 'selected' : '' %>><%= bg %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Chronic Conditions (comma-separated)</label>
+          <input type="text" name="chronicConditions" value="<%= (user.chronicConditions || []).join(', ') %>" class="form-input" placeholder="e.g., Diabetes, Hypertension">
+        </div>
+        <div class="form-group">
+          <label>Allergies (comma-separated)</label>
+          <input type="text" name="allergies" value="<%= (user.allergies || []).join(', ') %>" class="form-input" placeholder="e.g., Penicillin, Peanuts">
+        </div>
+        <button type="submit" class="btn btn--primary"><i class="fas fa-save"></i> Save Changes</button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="profile-card">
+      <h3 style="font-size:17px; font-weight:700; margin-bottom:20px;"><i class="fas fa-lock" style="color:var(--primary);"></i> Change Password</h3>
+      <form action="/auth/change-password?_method=PUT" method="POST" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" name="currentPassword" required class="form-input" placeholder="Your current password">
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" name="newPassword" required class="form-input" placeholder="Min 8 chars, uppercase, number">
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" name="confirmPassword" required class="form-input" placeholder="Repeat new password">
+        </div>
+        <button type="submit" class="btn btn--outline"><i class="fas fa-key"></i> Update Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+.profile-card { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 28px; box-shadow: var(--shadow-sm); }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 600; color: var(--text); }
+.form-input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--text); background: var(--bg); outline: none; width: 100%; font-family: var(--font); }
+.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,107,138,0.1); }
+@media (max-width: 768px) { .profile-grid { grid-template-columns: 1fr; } }
+</style>
+
+<%- include('../partials/footer') %>

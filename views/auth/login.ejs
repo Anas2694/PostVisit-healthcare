@@ -1,0 +1,115 @@
+<!-- views/auth/login.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | PostVisit</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+<div class="auth-layout">
+  <!-- Left panel -->
+  <div class="auth-panel auth-panel--left">
+    <div class="auth-panel__inner">
+      <a href="/" class="auth-brand">
+        <div class="auth-brand__icon"><i class="fas fa-heartbeat"></i></div>
+        <span>PostVisit</span>
+      </a>
+      <h1 class="auth-panel__title">Your health, <em>understood.</em></h1>
+      <p class="auth-panel__sub">Upload your reports. Get AI-powered insights. Track your health journey with clarity.</p>
+      <div class="auth-features">
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> AI-powered report analysis</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Real-time health trend tracking</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Intelligent health chatbot</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Bank-grade security</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="auth-panel auth-panel--right">
+    <div class="auth-form-container">
+      <div class="auth-form-header">
+        <h2>Welcome back</h2>
+        <p>Sign in to your PostVisit account</p>
+      </div>
+
+      <% if (error_msg && error_msg.length > 0) { %>
+        <div class="alert alert--error"><i class="fas fa-exclamation-circle"></i> <%= error_msg %></div>
+      <% } %>
+      <% if (success_msg && success_msg.length > 0) { %>
+        <div class="alert alert--success"><i class="fas fa-check-circle"></i> <%= success_msg %></div>
+      <% } %>
+
+      <form action="/auth/login" method="POST" class="auth-form" id="loginForm">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <div class="input-wrapper">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="password">
+            Password
+          </label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="input-toggle" onclick="togglePassword('password')">
+              <i class="fas fa-eye" id="password-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth" id="submitBtn">
+          <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+          <span class="btn-loader" style="display:none"><i class="fas fa-circle-notch fa-spin"></i> Signing in...</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">Don't have an account? <a href="/auth/register">Create one free</a></p>
+
+      <div class="auth-divider"><span>Protected by</span></div>
+      <div class="auth-security">
+        <span><i class="fas fa-shield-alt"></i> 256-bit encryption</span>
+        <span><i class="fas fa-lock"></i> HIPAA-compliant</span>
+        <span><i class="fas fa-key"></i> JWT secured</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function togglePassword(id) {
+  const input = document.getElementById(id);
+  const eye = document.getElementById(id + '-eye');
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    eye.className = 'fas fa-eye';
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+
+  // Show loading
+  btn.querySelector('.btn-text').style.display = 'none';
+  btn.querySelector('.btn-loader').style.display = 'inline-flex';
+  btn.disabled = true;
+
+  // 🔥 SAFETY: reset if something fails
+  setTimeout(() => {
+    btn.querySelector('.btn-text').style.display = 'inline-flex';
+    btn.querySelector('.btn-loader').style.display = 'none';
+    btn.disabled = false;
+  }, 5000);
+});
+</script>
+
+</body>
+</html>

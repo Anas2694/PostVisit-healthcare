@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | PostVisit</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+<div class="auth-layout">
+  <div class="auth-panel auth-panel--left">
+    <div class="auth-panel__inner">
+      <a href="/" class="auth-brand">
+        <div class="auth-brand__icon"><i class="fas fa-heartbeat"></i></div>
+        <span>PostVisit</span>
+      </a>
+      <h1 class="auth-panel__title">Start your health <em>journey.</em></h1>
+      <p class="auth-panel__sub">Get AI-powered insights from your medical reports in seconds. Free to get started.</p>
+      <div class="auth-features">
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Free account — no credit card needed</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Unlimited report uploads</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> AI analysis in seconds</div>
+        <div class="auth-feature"><i class="fas fa-check-circle"></i> Your data is always private</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-panel auth-panel--right">
+    <div class="auth-form-container">
+      <div class="auth-form-header">
+        <h2>Create your account</h2>
+        <p>Join PostVisit — it's completely free</p>
+      </div>
+
+      <% if (error_msg && error_msg.length > 0) { %>
+        <div class="alert alert--error"><i class="fas fa-exclamation-circle"></i> <%= error_msg %></div>
+      <% } %>
+
+      <form action="/auth/register" method="POST" class="auth-form" id="registerForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input type="text" id="firstName" name="firstName" placeholder="John" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input type="text" id="lastName" name="lastName" placeholder="Doe" required>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <div class="input-wrapper">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <div class="input-wrapper">
+              <i class="fas fa-venus-mars"></i>
+              <select id="gender" name="gender">
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="dateOfBirth">Date of Birth</label>
+            <div class="input-wrapper">
+              <i class="fas fa-calendar"></i>
+              <input type="date" id="dateOfBirth" name="dateOfBirth">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" name="password" placeholder="Min 8 chars, uppercase, number" required>
+            <button type="button" class="input-toggle" onclick="togglePassword('password')">
+              <i class="fas fa-eye" id="password-eye"></i>
+            </button>
+          </div>
+          <div class="password-strength" id="pwStrength"></div>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat your password" required>
+          </div>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="terms" required>
+          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+        <button type="submit" class="btn-auth" id="submitBtn">
+          <span class="btn-text"><i class="fas fa-user-plus"></i> Create Account</span>
+          <span class="btn-loader" style="display:none"><i class="fas fa-circle-notch fa-spin"></i> Creating account...</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="/auth/login">Sign in</a></p>
+    </div>
+  </div>
+</div>
+<script>
+function togglePassword(id) {
+  const input = document.getElementById(id);
+  const eye = document.getElementById(id + '-eye');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  eye.className = input.type === 'text' ? 'fas fa-eye-slash' : 'fas fa-eye';
+}
+
+// Password strength
+document.getElementById('password').addEventListener('input', function() {
+  const val = this.value;
+  const strength = document.getElementById('pwStrength');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['', '#e74c3c', '#f39c12', '#3498db', '#2ecc71'];
+  strength.innerHTML = score > 0 ? `<span style="color:${colors[score]}">${labels[score]}</span>` : '';
+});
+
+document.getElementById('registerForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.querySelector('.btn-text').style.display = 'none';
+  btn.querySelector('.btn-loader').style.display = 'inline-flex';
+  btn.disabled = true;
+});
+</script>
+</body>
+</html>

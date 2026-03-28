@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+<div class="section-header-sm" style="margin-bottom: 20px;">
+  <h3><i class="fas fa-history"></i> Chat History</h3>
+  <a href="/chat" class="btn btn--primary btn--sm"><i class="fas fa-plus"></i> New Chat</a>
+</div>
+
+<% if (sessions.length === 0) { %>
+<div class="empty-state">
+  <div class="empty-state__icon"><i class="fas fa-comments"></i></div>
+  <h3>No chat history yet</h3>
+  <p>Start a conversation with your AI health assistant.</p>
+  <a href="/chat" class="btn btn--primary">Start Chatting</a>
+</div>
+<% } else { %>
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 700px;">
+  <% sessions.forEach(session => { %>
+  <div style="display:flex; align-items:center; gap:14px; background:var(--bg-card); border-radius:var(--radius); border:1px solid var(--border); padding:18px 20px; transition:all var(--transition);">
+    <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; flex-shrink:0;">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div style="flex:1; min-width:0;">
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">
+        Session · <%= new Date(session.updatedAt).toLocaleString() %> · <%= session.count %> messages
+      </div>
+      <div style="font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        <%= session.lastMessage.substring(0, 80) %><%= session.lastMessage.length > 80 ? '...' : '' %>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; flex-shrink:0;">
+      <a href="/chat?session=<%= session._id %>" class="btn btn--outline btn--sm">
+        <i class="fas fa-comments"></i> Continue
+      </a>
+      <button class="btn btn--ghost btn--sm" onclick="deleteSession('<%= session._id %>')">
+        <i class="fas fa-trash" style="color:var(--danger)"></i>
+      </button>
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } %>
+
+<script>
+async function deleteSession(id) {
+  if (!confirm('Delete this chat session?')) return;
+  try {
+    const res = await fetch(`/chat/session/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) location.reload();
+  } catch (e) {
+    alert('Failed to delete session');
+  }
+}
+</script>
+
+<%- include('../partials/footer') %>

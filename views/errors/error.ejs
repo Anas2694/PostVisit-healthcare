@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= statusCode || 500 %> Error | PostVisit</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;background:#f5f7fb;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px;}
+    .error-wrap{max-width:500px}
+    .error-code{font-size:80px;font-weight:900;color:#e74c3c;line-height:1}
+    .error-icon{font-size:48px;color:#e74c3c;margin:16px 0}
+    h1{font-size:24px;font-weight:800;margin-bottom:10px;color:#1a2332}
+    p{color:#6b7a8d;margin-bottom:28px;font-size:15px;background:#fff;padding:16px;border-radius:10px;border:1px solid #fcc;color:#c0392b}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#1a6b8a,#2589af);color:#fff;box-shadow:0 4px 14px rgba(26,107,138,.3)}
+    .btn:hover{transform:translateY(-2px)}
+  </style>
+</head>
+<body>
+<div class="error-wrap">
+  <div class="error-code"><%= statusCode || 500 %></div>
+  <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+  <h1><%= title || 'Something went wrong' %></h1>
+  <p><%= message || 'An unexpected error occurred. Please try again.' %></p>
+  <a href="/dashboard" class="btn"><i class="fas fa-arrow-left"></i> Go Back to Dashboard</a>
+</div>
+</body>
+</html>

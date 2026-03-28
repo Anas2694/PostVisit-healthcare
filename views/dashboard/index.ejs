@@ -1,0 +1,308 @@
+<%- include('../partials/header') %>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+  <div class="stat-card stat-card--blue">
+    <div class="stat-card__icon"><i class="fas fa-file-medical"></i></div>
+    <div class="stat-card__body">
+      <p class="stat-card__label">Total Reports</p>
+      <h2 class="stat-card__value"><%= totalReports %></h2>
+      <p class="stat-card__sub"><%= pendingReports %> pending analysis</p>
+    </div>
+  </div>
+  <div class="stat-card stat-card--green">
+    <div class="stat-card__icon"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-card__body">
+      <p class="stat-card__label">Analyzed</p>
+      <h2 class="stat-card__value"><%= totalReports - pendingReports %></h2>
+      <p class="stat-card__sub">AI insights ready</p>
+    </div>
+  </div>
+  <div class="stat-card stat-card--teal">
+    <div class="stat-card__icon"><i class="fas fa-tint"></i></div>
+    <div class="stat-card__body">
+      <p class="stat-card__label">Latest Blood Sugar</p>
+      <h2 class="stat-card__value">
+        <% if (latestMetrics && latestMetrics.bloodSugarFasting) { %>
+          <%= latestMetrics.bloodSugarFasting.toFixed(0) %> <small style="font-size:14px;font-weight:400;">mg/dL</small>
+        <% } else { %>—<% } %>
+      </h2>
+      <p class="stat-card__sub">Fasting glucose</p>
+    </div>
+  </div>
+  <div class="stat-card stat-card--orange">
+    <div class="stat-card__icon"><i class="fas fa-bell"></i></div>
+    <div class="stat-card__body">
+      <p class="stat-card__label">Notifications</p>
+      <h2 class="stat-card__value"><%= unreadCount %></h2>
+      <p class="stat-card__sub">Unread alerts</p>
+    </div>
+  </div>
+</div>
+
+<!-- Risk Alerts -->
+<% if (riskAlerts.length > 0) { %>
+<div class="risk-alerts">
+  <div class="section-header-sm">
+    <h3><i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> Health Risk Alerts</h3>
+    <a href="/reports" class="link-sm">View all reports →</a>
+  </div>
+  <div class="alerts-list">
+    <% riskAlerts.slice(0, 3).forEach(alert => { %>
+    <div class="alert-item alert-item--<%= alert.severity %>">
+      <div class="alert-item__icon">
+        <i class="fas fa-<%= alert.severity === 'critical' ? 'exclamation-circle' : 'exclamation-triangle' %>"></i>
+      </div>
+      <div class="alert-item__body">
+        <strong><%= (alert.type || '').replace(/_/g, ' ').toUpperCase() %></strong>
+        <p><%= alert.description %></p>
+        <span class="alert-item__source">From: <%= alert.reportTitle %></span>
+      </div>
+      <a href="/reports/<%= alert.reportId %>" class="alert-item__action">View →</a>
+    </div>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<!-- Charts Section -->
+<% if (hasMetrics) { %>
+<div class="charts-section">
+  <div class="chart-card chart-card--wide">
+    <div class="chart-card__header">
+      <h3>Blood Sugar Trends</h3>
+      <div class="chart-controls">
+        <button class="chart-btn active" data-period="30">30D</button>
+        <button class="chart-btn" data-period="90">90D</button>
+        <button class="chart-btn" data-period="180">6M</button>
+      </div>
+    </div>
+    <div class="chart-card__body">
+      <canvas id="bloodSugarChart" height="90"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card__header"><h3>Cholesterol Profile</h3></div>
+    <div class="chart-card__body">
+      <canvas id="cholesterolChart" height="130"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card__header"><h3>Report Types</h3></div>
+    <div class="chart-card__body">
+      <canvas id="reportTypeChart" height="130"></canvas>
+    </div>
+  </div>
+  <div class="chart-card chart-card--wide">
+    <div class="chart-card__header"><h3>Hemoglobin & Blood Pressure</h3></div>
+    <div class="chart-card__body">
+      <canvas id="hbBpChart" height="90"></canvas>
+    </div>
+  </div>
+</div>
+<% } else { %>
+<!-- No metrics yet — show upload CTA -->
+<div class="charts-section">
+  <div class="chart-card chart-card--wide">
+    <div class="chart-empty" style="padding: 60px 20px;">
+      <i class="fas fa-chart-line" style="font-size:48px; color:var(--border); margin-bottom:16px;"></i>
+      <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">No health data yet</h3>
+      <p style="color:var(--text-muted); margin-bottom:20px;">Upload and analyze your first medical report to see your health trends here.</p>
+      <a href="/reports/upload" class="btn btn--primary"><i class="fas fa-cloud-upload-alt"></i> Upload Your First Report</a>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- Bottom: Recent Reports + Quick Actions -->
+<div class="dashboard-bottom">
+  <div class="recent-reports">
+    <div class="section-header-sm">
+      <h3>Recent Reports</h3>
+      <a href="/reports" class="link-sm">View all →</a>
+    </div>
+    <% if (recentReports.length === 0) { %>
+    <div class="empty-state" style="padding: 40px 10px;">
+      <div class="empty-state__icon"><i class="fas fa-file-medical"></i></div>
+      <h4>No reports yet</h4>
+      <p>Upload your first medical report to get AI-powered insights.</p>
+      <a href="/reports/upload" class="btn btn--primary btn--sm">Upload Report</a>
+    </div>
+    <% } else { %>
+    <div class="report-list">
+      <% recentReports.forEach(report => { %>
+      <a href="/reports/<%= report._id %>" class="report-item">
+        <div class="report-item__icon">
+          <i class="fas fa-<%= report.reportType === 'xray' ? 'x-ray' : report.reportType === 'mri' ? 'brain' : report.reportType === 'ecg' ? 'heartbeat' : 'flask' %>"></i>
+        </div>
+        <div class="report-item__body">
+          <strong><%= report.title %></strong>
+          <p><%= (report.reportType || 'report').replace(/_/g, ' ') %> &bull; <%= new Date(report.createdAt).toLocaleDateString() %></p>
+        </div>
+        <div class="report-item__status">
+          <span class="badge badge--<%= report.status === 'analyzed' ? 'success' : report.status === 'failed' ? 'danger' : 'warning' %>">
+            <%= report.status %>
+          </span>
+          <% if (report.analysis) { %>
+          <span class="severity-dot severity-dot--<%= report.analysis.severity || 'normal' %>"></span>
+          <% } %>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <a href="/reports/upload" class="quick-action quick-action--primary">
+      <i class="fas fa-cloud-upload-alt"></i><span>Upload Report</span>
+    </a>
+    <a href="/chat" class="quick-action">
+      <i class="fas fa-robot"></i><span>Ask AI Assistant</span>
+    </a>
+    <a href="/notifications" class="quick-action">
+      <i class="fas fa-bell"></i><span>Set Medication Reminder</span>
+    </a>
+    <a href="/reports/export/csv" class="quick-action">
+      <i class="fas fa-file-csv"></i><span>Export Health Data (CSV)</span>
+    </a>
+    <a href="/auth/profile" class="quick-action">
+      <i class="fas fa-user-edit"></i><span>Update Health Profile</span>
+    </a>
+  </div>
+</div>
+
+<% if (hasMetrics) { %>
+<script>
+const chartData = <%- chartData %>;
+const reportsByType = <%- reportsByType %>;
+
+// ---- Chart defaults ----
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 12;
+
+function getThemeColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function makeCharts() {
+  const gridColor = 'rgba(128,128,128,0.1)';
+  const primary = '#1a6b8a';
+  const green = '#2ecc71';
+  const orange = '#e67e22';
+  const red = '#e74c3c';
+  const purple = '#9b59b6';
+
+  // ---- Blood Sugar ----
+  const bsCtx = document.getElementById('bloodSugarChart')?.getContext('2d');
+  if (bsCtx) {
+    window._bsChart = new Chart(bsCtx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          { label: 'Fasting Sugar (mg/dL)', data: chartData.bloodSugar.fasting, borderColor: primary, backgroundColor: primary + '20', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: primary },
+          { label: 'Post-Prandial (mg/dL)', data: chartData.bloodSugar.postprandial, borderColor: orange, backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, borderDash: [5,4] },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { grid: { color: gridColor }, beginAtZero: false },
+          x: { grid: { color: gridColor } },
+        },
+      },
+    });
+  }
+
+  // ---- Cholesterol ----
+  const cholCtx = document.getElementById('cholesterolChart')?.getContext('2d');
+  if (cholCtx) {
+    const lastN = (arr, n) => arr.slice(-n);
+    const labels = lastN(chartData.labels, 8);
+    new Chart(cholCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Total', data: lastN(chartData.cholesterol.total, 8), backgroundColor: primary + 'cc', borderRadius: 4 },
+          { label: 'LDL', data: lastN(chartData.cholesterol.ldl, 8), backgroundColor: red + 'cc', borderRadius: 4 },
+          { label: 'HDL', data: lastN(chartData.cholesterol.hdl, 8), backgroundColor: green + 'cc', borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { grid: { color: gridColor }, beginAtZero: true }, x: { grid: { display: false } } },
+      },
+    });
+  }
+
+  // ---- Report Types Donut ----
+  const typeCtx = document.getElementById('reportTypeChart')?.getContext('2d');
+  if (typeCtx) {
+    const labels = reportsByType.map(r => (r._id || 'other').replace(/_/g, ' '));
+    const counts = reportsByType.map(r => r.count);
+    if (!labels.length) { labels.push('No reports yet'); counts.push(1); }
+    new Chart(typeCtx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: counts, backgroundColor: [primary, green, orange, red, purple, '#1abc9c', '#3498db'], borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-card') }],
+      },
+      options: { responsive: true, plugins: { legend: { position: 'right' } }, cutout: '68%' },
+    });
+  }
+
+  // ---- HB + BP ----
+  const hbCtx = document.getElementById('hbBpChart')?.getContext('2d');
+  if (hbCtx) {
+    new Chart(hbCtx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          { label: 'Hemoglobin (g/dL)', data: chartData.hemoglobin, borderColor: purple, tension: 0.4, pointRadius: 3, yAxisID: 'y' },
+          { label: 'BP Systolic (mmHg)', data: chartData.bloodPressure.systolic, borderColor: red, tension: 0.4, pointRadius: 3, yAxisID: 'y1', borderDash: [5,4] },
+          { label: 'BP Diastolic (mmHg)', data: chartData.bloodPressure.diastolic, borderColor: orange, tension: 0.4, pointRadius: 3, yAxisID: 'y1' },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { type: 'linear', position: 'left', grid: { color: gridColor } },
+          y1: { type: 'linear', position: 'right', grid: { display: false } },
+          x: { grid: { color: gridColor } },
+        },
+      },
+    });
+  }
+}
+
+makeCharts();
+
+// ---- Period controls (fetch fresh data) ----
+document.querySelectorAll('.chart-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const days = this.dataset.period;
+    try {
+      const res = await fetch(`/dashboard/analytics?days=${days}`);
+      const json = await res.json();
+      if (json.success && window._bsChart) {
+        window._bsChart.data.labels = json.data.labels;
+        window._bsChart.data.datasets[0].data = json.data.bloodSugar.fasting;
+        window._bsChart.data.datasets[1].data = json.data.bloodSugar.postprandial;
+        window._bsChart.update();
+      }
+    } catch (e) { console.error('Chart refresh failed', e); }
+  });
+});
+</script>
+<% } %>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+
+<div class="reports-page">
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <form method="GET" action="/reports" class="filters-form">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" name="search" placeholder="Search reports..." value="<%= query.search || '' %>">
+      </div>
+      <select name="type" class="filter-select">
+        <option value="">All Types</option>
+        <option value="blood_test" <%= query.type === 'blood_test' ? 'selected' : '' %>>Blood Test</option>
+        <option value="urine_test" <%= query.type === 'urine_test' ? 'selected' : '' %>>Urine Test</option>
+        <option value="xray" <%= query.type === 'xray' ? 'selected' : '' %>>X-Ray</option>
+        <option value="mri" <%= query.type === 'mri' ? 'selected' : '' %>>MRI</option>
+        <option value="ecg" <%= query.type === 'ecg' ? 'selected' : '' %>>ECG</option>
+        <option value="other" <%= query.type === 'other' ? 'selected' : '' %>>Other</option>
+      </select>
+      <select name="status" class="filter-select">
+        <option value="">All Status</option>
+        <option value="analyzed" <%= query.status === 'analyzed' ? 'selected' : '' %>>Analyzed</option>
+        <option value="processing" <%= query.status === 'processing' ? 'selected' : '' %>>Processing</option>
+        <option value="failed" <%= query.status === 'failed' ? 'selected' : '' %>>Failed</option>
+      </select>
+      <button type="submit" class="btn btn--outline btn--sm">Filter</button>
+      <a href="/reports" class="btn btn--ghost btn--sm">Clear</a>
+    </form>
+    <div class="reports-actions">
+      <a href="/reports/export/csv" class="btn btn--outline btn--sm"><i class="fas fa-download"></i> Export CSV</a>
+      <a href="/reports/upload" class="btn btn--primary"><i class="fas fa-plus"></i> Upload Report</a>
+    </div>
+  </div>
+
+  <p class="results-count"><%= total %> report(s) found</p>
+
+  <!-- Reports Grid -->
+  <% if (reports.length === 0) { %>
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fas fa-file-medical"></i></div>
+    <h3>No reports found</h3>
+    <p>Upload your first medical report to get AI-powered insights.</p>
+    <a href="/reports/upload" class="btn btn--primary">Upload Your First Report</a>
+  </div>
+  <% } else { %>
+  <div class="reports-grid">
+    <% reports.forEach(report => { %>
+    <div class="report-card">
+      <div class="report-card__header">
+        <div class="report-type-icon">
+          <i class="fas fa-<%= report.reportType === 'xray' ? 'x-ray' : report.reportType === 'mri' ? 'brain' : report.reportType === 'ecg' ? 'heartbeat' : 'flask' %>"></i>
+        </div>
+        <div class="report-card__badges">
+          <span class="badge badge--<%= report.status === 'analyzed' ? 'success' : report.status === 'failed' ? 'danger' : 'warning' %>"><%= report.status %></span>
+          <% if (report.analysis) { %>
+          <span class="badge badge--severity-<%= report.analysis.severity %>"><%= report.analysis.severity %></span>
+          <% } %>
+        </div>
+      </div>
+      <div class="report-card__body">
+        <h4><%= report.title %></h4>
+        <p class="report-type"><%= report.reportType?.replace(/_/g, ' ') %></p>
+        <% if (report.analysis?.summary) { %>
+        <p class="report-summary"><%= report.analysis.summary.substring(0, 100) %>...</p>
+        <% } %>
+        <div class="report-card__meta">
+          <span><i class="fas fa-calendar-alt"></i> <%= new Date(report.createdAt).toLocaleDateString() %></span>
+          <% if (report.doctorName) { %><span><i class="fas fa-user-md"></i> Dr. <%= report.doctorName %></span><% } %>
+        </div>
+      </div>
+      <div class="report-card__footer">
+        <a href="/reports/<%= report._id %>" class="btn btn--primary btn--sm">View Analysis</a>
+        <a href="/reports/<%= report._id %>/download" class="btn btn--outline btn--sm"><i class="fas fa-download"></i></a>
+        <button class="btn btn--ghost btn--sm" onclick="deleteReport('<%= report._id %>')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+  <div class="pagination">
+    <% if (page > 1) { %>
+    <a href="?page=<%= page - 1 %>&type=<%= query.type || '' %>&status=<%= query.status || '' %>&search=<%= query.search || '' %>" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+    <% } %>
+    <% for (let i = 1; i <= totalPages; i++) { %>
+    <a href="?page=<%= i %>&type=<%= query.type || '' %>&status=<%= query.status || '' %>&search=<%= query.search || '' %>" class="page-btn <%= i === page ? 'active' : '' %>"><%= i %></a>
+    <% } %>
+    <% if (page < totalPages) { %>
+    <a href="?page=<%= page + 1 %>&type=<%= query.type || '' %>&status=<%= query.status || '' %>&search=<%= query.search || '' %>" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+    <% } %>
+  </div>
+  <% } %>
+  <% } %>
+</div>
+
+<script>
+async function deleteReport(id) {
+  if (!confirm('Delete this report permanently?')) return;
+  const res = await fetch(`/reports/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) location.reload();
+  else alert(data.message);
+}
+</script>
+
+<%- include('../partials/footer') %>

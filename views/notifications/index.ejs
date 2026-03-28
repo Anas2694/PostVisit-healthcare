@@ -1,0 +1,168 @@
+<%- include('../partials/header') %>
+
+<div class="notifications-page">
+  <!-- Header Actions -->
+  <div class="section-header-sm" style="margin-bottom: 20px;">
+    <h3><i class="fas fa-bell"></i> Notifications & Reminders</h3>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn btn--outline btn--sm" id="markAllRead">
+        <i class="fas fa-check-double"></i> Mark All Read
+      </button>
+      <button class="btn btn--primary btn--sm" onclick="document.getElementById('reminderModal').classList.add('open')">
+        <i class="fas fa-plus"></i> Set Reminder
+      </button>
+    </div>
+  </div>
+
+  <!-- Two column layout -->
+  <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px;">
+
+    <!-- Notifications List -->
+    <div>
+      <% if (notifications.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fas fa-bell-slash"></i></div>
+        <h3>No notifications yet</h3>
+        <p>You'll be notified when your reports are analyzed and when reminders are due.</p>
+      </div>
+      <% } else { %>
+      <div class="notif-list">
+        <% notifications.forEach(n => { %>
+        <div class="notif-item <%= !n.isRead ? 'notif-item--unread' : '' %>" id="notif-<%= n._id %>">
+          <div class="notif-item__icon" style="background: <%=
+            n.type === 'report_analyzed' ? '#e8f4f8' :
+            n.type === 'medication_reminder' ? '#fef3e2' :
+            n.type === 'health_alert' ? '#fef0f0' : '#f0f4ff'
+          %>; color: <%=
+            n.type === 'report_analyzed' ? '#1a6b8a' :
+            n.type === 'medication_reminder' ? '#e67e22' :
+            n.type === 'health_alert' ? '#e74c3c' : '#3498db'
+          %>;">
+            <i class="fas fa-<%=
+              n.type === 'report_analyzed' ? 'chart-bar' :
+              n.type === 'medication_reminder' ? 'pills' :
+              n.type === 'health_alert' ? 'exclamation-triangle' :
+              n.type === 'follow_up' ? 'calendar-check' : 'bell'
+            %>"></i>
+          </div>
+          <div class="notif-item__body">
+            <strong><%= n.title %></strong>
+            <p><%= n.message %></p>
+            <time><%= new Date(n.createdAt).toLocaleString() %></time>
+            <% if (n.actionUrl) { %>
+            <a href="<%= n.actionUrl %>" class="btn btn--outline btn--sm" style="margin-top: 8px; display:inline-flex;">
+              View Details →
+            </a>
+            <% } %>
+          </div>
+          <div class="notif-item__actions">
+            <% if (!n.isRead) { %>
+            <button class="btn btn--ghost btn--sm" data-mark-read="<%= n._id %>" title="Mark as read">
+              <i class="fas fa-check"></i>
+            </button>
+            <% } %>
+            <button class="btn btn--ghost btn--sm" data-delete-notif="<%= n._id %>" title="Delete">
+              <i class="fas fa-trash" style="color: var(--danger);"></i>
+            </button>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Sidebar: Medications + Quick Reminder -->
+    <div>
+      <!-- Active Medications -->
+      <div class="detail-card" style="margin-bottom: 20px;">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-pills"></i> Active Medications</h3>
+          <button class="btn btn--outline btn--sm" onclick="document.getElementById('medicationModal').classList.add('open')">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+        <% if (medications.length === 0) { %>
+        <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+          No medications tracked yet
+        </p>
+        <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <% medications.forEach(med => { %>
+          <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:var(--bg); border-radius:10px; border:1px solid var(--border);">
+            <div style="width:36px; height:36px; border-radius:50%; background:#fef3e2; display:flex; align-items:center; justify-content:center; color:#e67e22; flex-shrink:0;">
+              <i class="fas fa-capsules"></i>
+            </div>
+            <div>
+              <strong style="font-size:14px;"><%= med.name %></strong>
+              <p style="font-size:12px; color:var(--text-muted);"><%= med.dosage || '' %> • <%= med.frequency?.replace(/_/g,' ') || '' %></p>
+              <% if (med.purpose) { %><p style="font-size:12px; color:var(--text-muted);"><%= med.purpose %></p><% } %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- Quick Set Reminder -->
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-clock"></i> Quick Reminder</h3>
+        </div>
+        <form action="/notifications/reminder" method="POST" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" name="title" placeholder="e.g., Take morning medication" required class="form-input" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; outline:none; color:var(--text); background:var(--bg);">
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="message" placeholder="Reminder details..." required class="form-input form-textarea" rows="2" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; outline:none; color:var(--text); background:var(--bg); resize:vertical;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Date & Time</label>
+            <input type="datetime-local" name="scheduledFor" required class="form-input" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; outline:none; color:var(--text); background:var(--bg);">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" name="isRecurring" style="margin-right:6px;"> Daily recurring
+            </label>
+          </div>
+          <button type="submit" class="btn btn--primary btn--full">
+            <i class="fas fa-bell"></i> Set Reminder
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medication Modal -->
+<div class="modal-overlay" id="medicationModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal__header">
+      <h3>Add Medication</h3>
+      <button onclick="document.getElementById('medicationModal').classList.remove('open')" class="modal__close"><i class="fas fa-times"></i></button>
+    </div>
+    <form action="/notifications/medication" method="POST" style="display:flex; flex-direction:column; gap:16px;">
+      <div class="form-group"><label>Medication Name *</label><input type="text" name="name" required class="form-input" placeholder="e.g., Metformin 500mg" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; width:100%;"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="form-group"><label>Dosage</label><input type="text" name="dosage" class="form-input" placeholder="e.g., 500mg" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; width:100%;"></div>
+        <div class="form-group"><label>Frequency</label><select name="frequency" class="form-input" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; width:100%;"><option value="once_daily">Once daily</option><option value="twice_daily">Twice daily</option><option value="thrice_daily">Thrice daily</option><option value="weekly">Weekly</option><option value="as_needed">As needed</option></select></div>
+      </div>
+      <div class="form-group"><label>Purpose</label><input type="text" name="purpose" class="form-input" placeholder="e.g., Blood sugar control" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; width:100%;"></div>
+      <div class="form-group"><label>Prescribed By</label><input type="text" name="prescribedBy" class="form-input" placeholder="Dr. Name" style="border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px; width:100%;"></div>
+      <button type="submit" class="btn btn--primary btn--full"><i class="fas fa-plus"></i> Add Medication</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg-card); border-radius:16px; padding:28px; width:90%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+.modal__header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.modal__header h3 { font-size:18px; font-weight:700; }
+.modal__close { width:32px; height:32px; border-radius:50%; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
+.modal__close:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
+</style>
+
+<%- include('../partials/footer') %>

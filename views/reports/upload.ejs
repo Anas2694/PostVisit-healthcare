@@ -1,0 +1,159 @@
+<%- include('../partials/header') %>
+
+<div class="upload-page">
+  <div class="upload-container">
+    <div class="upload-header">
+      <h2>Upload Medical Report</h2>
+      <p>Upload a PDF or image of your medical report. Our AI will analyze it and provide clear insights.</p>
+    </div>
+
+    <form action="/reports/upload" method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+
+      <!-- File Drop Zone -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone__content" id="dropContent">
+          <div class="drop-zone__icon"><i class="fas fa-cloud-upload-alt"></i></div>
+          <h3>Drag & Drop your file here</h3>
+          <p>or click to browse</p>
+          <p class="drop-zone__hint">Supports: PDF, JPG, PNG, WebP — Max 10MB</p>
+    <input 
+  type="file" 
+  id="reportFile" 
+  name="reportFile" 
+  accept=".pdf,.jpg,.jpeg,.png,.webp"
+  style="opacity:0; position:absolute; width:100%; height:100%; cursor:pointer;"
+  required
+>
+        </div>
+        <div class="drop-zone__preview" id="filePreview" style="display:none">
+          <div class="file-info">
+            <i class="fas fa-file-alt"></i>
+            <div>
+              <p id="fileName">No file selected</p>
+              <span id="fileSize"></span>
+            </div>
+            <button type="button" class="file-remove" onclick="clearFile()"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Fields -->
+      <div class="form-section">
+        <div class="form-group">
+          <label for="title">Report Title *</label>
+          <input type="text" id="title" name="title" placeholder="e.g., Blood Test Report - Jan 2025" required class="form-input">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reportType">Report Type</label>
+            <select id="reportType" name="reportType" class="form-input">
+              <option value="blood_test">Blood Test</option>
+              <option value="urine_test">Urine Test</option>
+              <option value="xray">X-Ray</option>
+              <option value="mri">MRI</option>
+              <option value="ct_scan">CT Scan</option>
+              <option value="ecg">ECG / EKG</option>
+              <option value="ultrasound">Ultrasound</option>
+              <option value="pathology">Pathology</option>
+              <option value="prescription">Prescription</option>
+              <option value="discharge_summary">Discharge Summary</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportDate">Report Date</label>
+            <input type="date" id="reportDate" name="reportDate" class="form-input" value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="doctorName">Doctor's Name</label>
+            <input type="text" id="doctorName" name="doctorName" placeholder="Dr. Smith" class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="hospitalName">Hospital / Lab</label>
+            <input type="text" id="hospitalName" name="hospitalName" placeholder="Apollo Hospital" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Notes (optional)</label>
+          <textarea id="description" name="description" placeholder="Any additional notes about this report..." class="form-input form-textarea" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- AI Info Banner -->
+      <div class="ai-info-banner">
+        <div class="ai-info-banner__icon"><i class="fas fa-robot"></i></div>
+        <div>
+          <strong>What happens after upload?</strong>
+          <p>Our AI will: extract medical values via OCR → analyze abnormalities → generate personalized insights → predict health risks → send you a notification when ready.</p>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn btn--primary btn--lg btn--full" id="submitBtn">
+        <span class="btn-text"><i class="fas fa-cloud-upload-alt"></i> Upload & Analyze Report</span>
+        <span class="btn-loader" style="display:none"><i class="fas fa-circle-notch fa-spin"></i> Uploading... Please wait</span>
+      </button>
+
+      <p class="upload-disclaimer">
+        <i class="fas fa-lock"></i> Your file is encrypted and stored securely. We never share your medical data.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('reportFile');
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    showFilePreview(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) showFilePreview(fileInput.files[0]);
+});
+
+function showFilePreview(file) {
+  document.getElementById('dropContent').style.display = 'none';
+  document.getElementById('filePreview').style.display = 'flex';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function clearFile() {
+  fileInput.value = '';
+  document.getElementById('dropContent').style.display = 'flex';
+  document.getElementById('filePreview').style.display = 'none';
+}
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  if (!fileInput.files.length) {
+    e.preventDefault();
+    alert('Please select a file to upload');
+    return;
+  }
+  const btn = document.getElementById('submitBtn');
+  btn.querySelector('.btn-text').style.display = 'none';
+  btn.querySelector('.btn-loader').style.display = 'inline-flex';
+  btn.disabled = true;
+});
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,400 @@
+<%- include('../partials/header') %>
+
+<div class="report-detail">
+
+  <!-- ── Report Header ─────────────────────────────────────────────────────── -->
+  <div class="report-detail__header">
+    <div class="report-detail__meta">
+      <a href="/reports" class="back-link"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+      <h2><%= report.title %></h2>
+      <div class="report-meta-tags">
+        <span class="tag tag--type"><%= report.reportType?.replace(/_/g, ' ') %></span>
+        <span class="tag tag--status tag--<%= report.status || 'uploaded' %>"><%= report.status %></span>
+
+        <% if (report.analysis) { %>
+        <span class="tag tag--severity tag--<%= report.analysis?.severity || 'normal' %>">
+          <i class="fas fa-circle"></i> <%= report.analysis?.severity?.toUpperCase() || 'NORMAL' %>
+        </span>
+        <% } %>
+
+        <span class="tag">
+          <i class="fas fa-calendar"></i>
+          <%= new Date(report.reportDate || report.createdAt).toLocaleDateString() %>
+        </span>
+
+        <% if (report.doctorName) { %>
+          <span class="tag"><i class="fas fa-user-md"></i> Dr. <%= report.doctorName %></span>
+        <% } %>
+
+        <% if (report.hospitalName) { %>
+          <span class="tag"><i class="fas fa-hospital"></i> <%= report.hospitalName %></span>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="report-detail__actions">
+      <a href="/reports/<%= report._id %>/download" class="btn btn--outline" target="_blank">
+        <i class="fas fa-file-pdf"></i> Download PDF
+      </a>
+
+      <!-- FIX: pass reportId as query param so chat page can load context -->
+      <a href="/chat?reportId=<%= report._id %>&session=<%= Date.now() %>" class="btn btn--secondary">
+        <i class="fas fa-robot"></i> Ask AI
+      </a>
+
+      <button class="btn btn--danger btn--sm delete-btn" data-id="<%= report._id %>">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Processing State ──────────────────────────────────────────────────── -->
+  <% if (report.status === 'processing' || report.status === 'uploaded') { %>
+  <div class="processing-card">
+    <div class="processing-spinner">
+      <div class="spinner"></div>
+    </div>
+    <div>
+      <h3>AI Analysis in Progress</h3>
+      <p>Our AI is extracting data and generating insights from your report. This usually takes 30–60 seconds.</p>
+      <button class="btn btn--outline btn--sm" onclick="location.reload()">
+        <i class="fas fa-sync"></i> Check Status
+      </button>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- ── Failed State ──────────────────────────────────────────────────────── -->
+  <% if (report.status === 'failed') { %>
+  <div class="alert-card alert-card--error">
+    <i class="fas fa-exclamation-circle"></i>
+    <div>
+      <h3>Analysis Failed</h3>
+      <p>We couldn't process this report: <%= report.processingError || 'Unknown error' %></p>
+      <p>Please try uploading the report again or contact support.</p>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- ── Main Content (only when analysis exists) ──────────────────────────── -->
+  <% if (report.analysis) { %>
+  <div class="report-detail__content">
+
+    <!-- AI Summary -->
+    <div class="detail-card detail-card--primary">
+      <div class="detail-card__header">
+        <h3><i class="fas fa-brain"></i> AI Health Summary</h3>
+        <span class="ai-badge">
+  PostVisit AI
+  <% if (report.analysis?.aiProvider) { %>
+    · 
+    <%= report.analysis.aiProvider.includes("gemini") 
+        ? "Health Analysis" 
+        : "Mock Engine" %>
+  <% } %>
+</span>
+      </div>
+
+      <p class="ai-summary">
+        <%= report.analysis.summary || 'No summary available' %>
+      </p>
+
+      <% if (report.analysis.diagnosis) { %>
+      <div class="diagnosis-box">
+        <strong>Key Findings:</strong> <%= report.analysis.diagnosis %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Extracted Values -->
+    <% if (report.extractedValues && Object.keys(report.extractedValues).length > 0) { %>
+    <div class="detail-card">
+      <div class="detail-card__header">
+        <h3><i class="fas fa-flask"></i> Extracted Medical Values</h3>
+        <span class="ocr-confidence">
+          OCR Confidence: <%= report.ocrConfidence ? report.ocrConfidence + '%' : 'N/A' %>
+        </span>
+      </div>
+
+      <div class="values-grid">
+        <% const v = report.extractedValues; %>
+
+        <% if (v.bloodSugar?.fasting?.value) { %>
+        <div class="value-card value-card--<%= v.bloodSugar.fasting.status || 'normal' %>">
+          <div class="value-card__label">Fasting Sugar</div>
+          <div class="value-card__value"><%= v.bloodSugar.fasting.value %> <small>mg/dL</small></div>
+          <div class="value-card__status"><%= v.bloodSugar.fasting.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.bloodSugar?.hba1c?.value) { %>
+        <div class="value-card value-card--<%= v.bloodSugar.hba1c.status || 'normal' %>">
+          <div class="value-card__label">HbA1c</div>
+          <div class="value-card__value"><%= v.bloodSugar.hba1c.value %> <small>%</small></div>
+          <div class="value-card__status"><%= v.bloodSugar.hba1c.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.cholesterol?.total?.value) { %>
+        <div class="value-card value-card--<%= v.cholesterol.total.status || 'normal' %>">
+          <div class="value-card__label">Total Cholesterol</div>
+          <div class="value-card__value"><%= v.cholesterol.total.value %> <small>mg/dL</small></div>
+          <div class="value-card__status"><%= v.cholesterol.total.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.cholesterol?.hdl?.value) { %>
+        <div class="value-card value-card--<%= v.cholesterol.hdl.status || 'normal' %>">
+          <div class="value-card__label">HDL</div>
+          <div class="value-card__value"><%= v.cholesterol.hdl.value %> <small>mg/dL</small></div>
+          <div class="value-card__status"><%= v.cholesterol.hdl.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.cholesterol?.ldl?.value) { %>
+        <div class="value-card value-card--<%= v.cholesterol.ldl.status || 'normal' %>">
+          <div class="value-card__label">LDL</div>
+          <div class="value-card__value"><%= v.cholesterol.ldl.value %> <small>mg/dL</small></div>
+          <div class="value-card__status"><%= v.cholesterol.ldl.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.hemoglobin?.value) { %>
+        <div class="value-card value-card--<%= v.hemoglobin.status || 'normal' %>">
+          <div class="value-card__label">Hemoglobin</div>
+          <div class="value-card__value"><%= v.hemoglobin.value %> <small>g/dL</small></div>
+          <div class="value-card__status"><%= v.hemoglobin.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+
+        <% if (v.bloodPressure?.systolic?.value) { %>
+        <div class="value-card value-card--<%= v.bloodPressure.systolic.status || 'normal' %>">
+          <div class="value-card__label">Blood Pressure</div>
+          <div class="value-card__value">
+            <%= v.bloodPressure.systolic.value %>/<%= v.bloodPressure.diastolic?.value || '?' %>
+            <small>mmHg</small>
+          </div>
+          <div class="value-card__status"><%= v.bloodPressure.systolic.status?.toUpperCase() || 'NORMAL' %></div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Key Findings -->
+    <% if (report.analysis.keyFindings?.length > 0) { %>
+    <div class="detail-card">
+      <div class="detail-card__header"><h3><i class="fas fa-search"></i> Key Findings</h3></div>
+
+      <div class="findings-list">
+        <% report.analysis.keyFindings.forEach(f => { %>
+        <div class="finding finding--<%= f.severity || 'normal' %>">
+          <div class="finding__indicator"></div>
+          <div class="finding__body">
+            <strong><%= f.finding %></strong>:
+            <span class="finding__value"><%= f.value %></span>
+            <p><%= f.interpretation || '' %></p>
+          </div>
+          <span class="finding__badge"><%= f.severity?.toUpperCase() || 'NORMAL' %></span>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════════════
+           FIX: "Detailed Analysis" button — was missing entirely.
+           Opens an expandable panel with all remaining analysis sections.
+           ════════════════════════════════════════════════════════════════════ -->
+      <div style="margin-top: 1.2rem; text-align: right;">
+        <button class="btn btn--outline btn--sm" id="toggleDetailedBtn" onclick="toggleDetailedAnalysis()">
+          <i class="fas fa-chevron-down" id="toggleDetailedIcon"></i>
+          Detailed Analysis
+        </button>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- ════ DETAILED ANALYSIS PANEL (hidden by default) ════════════════════ -->
+    <div id="detailedAnalysisPanel" style="display:none;">
+
+      <!-- Risk Predictions -->
+      <% if (report.analysis.riskPredictions?.length > 0) { %>
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-exclamation-triangle"></i> Health Risk Assessment</h3>
+        </div>
+        <% report.analysis.riskPredictions.forEach(rp => { %>
+        <div class="risk-item risk-item--<%= rp.riskLevel || 'low' %>">
+          <div class="risk-item__header">
+            <strong><%= rp.condition %></strong>
+            <span class="risk-badge risk-badge--<%= rp.riskLevel %>">
+              <%= rp.riskLevel?.toUpperCase().replace('_', ' ') %> RISK · <%= rp.probability %>%
+            </span>
+          </div>
+          <p class="risk-item__explanation"><%= rp.explanation %></p>
+          <% if (rp.preventionTips?.length) { %>
+          <ul class="prevention-tips">
+            <% rp.preventionTips.forEach(tip => { %>
+            <li><i class="fas fa-shield-alt"></i> <%= tip %></li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <!-- Recommendations -->
+      <% if (report.analysis.recommendations?.length > 0) { %>
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-clipboard-check"></i> Recommendations</h3>
+        </div>
+        <ul class="advice-list advice-list--recommendations">
+          <% report.analysis.recommendations.forEach(r => { %>
+          <li><i class="fas fa-check-circle"></i> <%= r %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %>
+
+      <!-- Precautions -->
+      <% if (report.analysis.precautions?.length > 0) { %>
+      <div class="detail-card detail-card--warning">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-exclamation-circle"></i> Precautions</h3>
+        </div>
+        <ul class="advice-list advice-list--precautions">
+          <% report.analysis.precautions.forEach(p => { %>
+          <li><i class="fas fa-times-circle"></i> <%= p %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %>
+
+      <!-- Dietary Advice -->
+      <% if (report.analysis.dietaryAdvice?.length > 0) { %>
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-utensils"></i> Dietary Advice</h3>
+        </div>
+        <ul class="advice-list advice-list--diet">
+          <% report.analysis.dietaryAdvice.forEach(d => { %>
+          <li><i class="fas fa-leaf"></i> <%= d %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %>
+
+      <!-- Follow-up Tests -->
+      <% if (report.analysis.followUpTests?.length > 0) { %>
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <h3><i class="fas fa-vials"></i> Recommended Follow-up Tests</h3>
+        </div>
+        <div class="followup-tags">
+          <% report.analysis.followUpTests.forEach(t => { %>
+          <span class="followup-tag"><i class="fas fa-microscope"></i> <%= t %></span>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+    </div><!-- /detailedAnalysisPanel -->
+
+  </div><!-- /report-detail__content -->
+  <% } %>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer-card">
+    <i class="fas fa-info-circle"></i>
+    <p>
+      This analysis is generated by AI for informational purposes only.
+      <strong>Always consult a qualified healthcare professional</strong>.
+    </p>
+  </div>
+
+</div><!-- /report-detail -->
+
+<style>
+/* ── Inline styles for new sections (add to main.css for production) ── */
+.risk-item {
+  border-left: 4px solid #f39c12;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0 8px 8px 0;
+  background: var(--card-bg, #fff);
+}
+.risk-item--high, .risk-item--very_high { border-color: #e74c3c; }
+.risk-item--low  { border-color: #2ecc71; }
+.risk-item__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+.risk-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; color: #fff; background: #f39c12; }
+.risk-badge--high, .risk-badge--very_high { background: #e74c3c; }
+.risk-badge--low  { background: #2ecc71; }
+.risk-item__explanation { font-size: 0.88rem; color: #555; margin: 0.3rem 0; }
+.prevention-tips { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.prevention-tips li { font-size: 0.85rem; color: #666; padding: 2px 0; }
+.prevention-tips li i { color: #1a6b8a; margin-right: 6px; }
+
+.advice-list { list-style: none; padding: 0; margin: 0; }
+.advice-list li { padding: 5px 0; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 8px; }
+.advice-list--recommendations li i { color: #2ecc71; margin-top: 3px; }
+.advice-list--precautions li i    { color: #e74c3c; margin-top: 3px; }
+.advice-list--diet li i           { color: #27ae60; margin-top: 3px; }
+
+.detail-card--warning { border-left: 4px solid #f39c12; }
+
+.followup-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
+.followup-tag {
+  background: #eaf4fb; color: #1a6b8a;
+  border: 1px solid #a8d8ea;
+  border-radius: 20px; padding: 4px 12px; font-size: 0.83rem;
+}
+.followup-tag i { margin-right: 5px; }
+
+/* Smooth expand animation */
+#detailedAnalysisPanel { animation: slideDown 0.25s ease; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+// ── Detailed Analysis toggle ──────────────────────────────────────────────────
+function toggleDetailedAnalysis() {
+  const panel = document.getElementById('detailedAnalysisPanel');
+  const icon  = document.getElementById('toggleDetailedIcon');
+  const btn   = document.getElementById('toggleDetailedBtn');
+
+  const isHidden = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = isHidden ? 'block' : 'none';
+  icon.className  = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+  btn.innerHTML   = `<i class="${icon.className}" id="toggleDetailedIcon"></i> ${isHidden ? 'Hide' : 'Detailed Analysis'}`;
+}
+
+// ── Delete report ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to delete this report? This cannot be undone.')) return;
+    const id = btn.dataset.id;
+    try {
+      const res  = await fetch(`/reports/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = '/reports';
+      } else {
+        alert('Delete failed: ' + (data.message || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Error deleting report. Please try again.');
+    }
+  });
+});
+
+// ── Auto-refresh while processing ─────────────────────────────────────────────
+<% if (report.status === 'processing' || report.status === 'uploaded') { %>
+setTimeout(() => location.reload(), 5000);
+<% } %>
+</script>
+
+<%- include('../partials/footer') %>

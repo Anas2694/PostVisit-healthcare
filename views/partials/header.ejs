@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | PostVisit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <% if (typeof extraCSS !== 'undefined') { %><link rel="stylesheet" href="<%= extraCSS %>"><% } %>
+  <!-- Apply saved theme instantly to prevent flash -->
+  <script>
+    (function() {
+      const t = localStorage.getItem('pv-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+
+<!-- Flash Messages -->
+<div id="flash-container">
+  <% if (success_msg && success_msg.length > 0) { %>
+    <div class="flash flash--success">
+      <i class="fas fa-check-circle"></i>
+      <span><%= success_msg %></span>
+      <button class="flash__close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    </div>
+  <% } %>
+  <% if (error_msg && error_msg.length > 0) { %>
+    <div class="flash flash--error">
+      <i class="fas fa-exclamation-circle"></i>
+      <span><%= error_msg %></span>
+      <button class="flash__close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    </div>
+  <% } %>
+</div>
+
+<% if (currentUser) { %>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <a href="/dashboard" class="sidebar__logo">
+        <div class="logo-icon"><i class="fas fa-heartbeat"></i></div>
+        <span class="logo-text">PostVisit</span>
+      </a>
+      <button class="sidebar__toggle" id="sidebarToggle" aria-label="Close sidebar">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="sidebar__user">
+      <div class="user-avatar">
+        <% if (currentUser.avatar) { %>
+          <img src="<%= currentUser.avatar %>" alt="Avatar">
+        <% } else { %>
+          <span><%= currentUser.firstName[0] %><%= currentUser.lastName[0] %></span>
+        <% } %>
+      </div>
+      <div class="user-info">
+        <p class="user-name"><%= currentUser.firstName %> <%= currentUser.lastName %></p>
+        <p class="user-role"><%= currentUser.role %></p>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <div class="nav-section">
+        <p class="nav-label">Main</p>
+        <a href="/dashboard" class="nav-link <%= typeof title !== 'undefined' && title.includes('Dashboard') ? 'active' : '' %>">
+          <i class="fas fa-th-large"></i><span>Dashboard</span>
+        </a>
+        <a href="/reports" class="nav-link <%= typeof title !== 'undefined' && (title.includes('Report') && !title.includes('Upload')) ? 'active' : '' %>">
+          <i class="fas fa-file-medical"></i><span>My Reports</span>
+        </a>
+        <a href="/reports/upload" class="nav-link <%= typeof title !== 'undefined' && title.includes('Upload') ? 'active' : '' %>">
+          <i class="fas fa-cloud-upload-alt"></i><span>Upload Report</span>
+        </a>
+      </div>
+      <div class="nav-section">
+        <p class="nav-label">Health Tools</p>
+        <a href="/chat" class="nav-link <%= typeof title !== 'undefined' && title.includes('Chat') ? 'active' : '' %>">
+          <i class="fas fa-robot"></i><span>AI Assistant</span>
+        </a>
+        <a href="/notifications" class="nav-link <%= typeof title !== 'undefined' && title.includes('Notif') ? 'active' : '' %>">
+          <i class="fas fa-bell"></i>
+          <span>Reminders</span>
+          <span class="badge" id="notif-badge" style="display:none">0</span>
+        </a>
+        <a href="/reports/export/csv" class="nav-link">
+          <i class="fas fa-file-csv"></i><span>Export Data</span>
+        </a>
+      </div>
+      <% if (currentUser.role === 'admin') { %>
+      <div class="nav-section">
+        <p class="nav-label">Admin</p>
+        <a href="/admin" class="nav-link">
+          <i class="fas fa-shield-alt"></i><span>Admin Panel</span>
+        </a>
+      </div>
+      <% } %>
+      <div class="nav-section nav-section--bottom">
+        <a href="/auth/profile" class="nav-link">
+          <i class="fas fa-user-cog"></i><span>Profile</span>
+        </a>
+        <a href="/auth/logout" class="nav-link nav-link--danger">
+          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" id="menuBtn" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="topbar__title"><%= title %></h1>
+      </div>
+      <div class="topbar__right">
+        <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <a href="/notifications" class="topbar__notif" title="Notifications">
+          <i class="fas fa-bell"></i>
+          <span class="notif-dot" id="notifDot" style="display:none"></span>
+        </a>
+        <a href="/reports/upload" class="btn btn--primary btn--sm">
+          <i class="fas fa-plus"></i> Upload
+        </a>
+      </div>
+    </header>
+    <div class="page-content">
+<% } else { %>
+<div class="public-layout">
+<% } %>
+

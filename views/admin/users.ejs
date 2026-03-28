@@ -1,0 +1,74 @@
+<%- include('../partials/header') %>
+
+<div class="section-header-sm" style="margin-bottom: 20px;">
+  <h3><i class="fas fa-users"></i> Manage Users (<%= users.length %>)</h3>
+  <a href="/admin" class="btn btn--outline btn--sm"><i class="fas fa-arrow-left"></i> Back to Admin</a>
+</div>
+
+<div class="detail-card">
+  <div style="overflow-x: auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border);">
+          <th style="text-align:left; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">User</th>
+          <th style="text-align:left; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Email</th>
+          <th style="text-align:center; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Role</th>
+          <th style="text-align:center; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Reports</th>
+          <th style="text-align:center; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Status</th>
+          <th style="text-align:center; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Joined</th>
+          <th style="text-align:center; padding:12px 16px; color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+        <tr style="border-bottom:1px solid var(--border-light); transition:background .15s;" onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='transparent'">
+          <td style="padding:14px 16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; flex-shrink:0;">
+                <%= u.firstName[0] %><%= u.lastName[0] %>
+              </div>
+              <div>
+                <strong><%= u.firstName %> <%= u.lastName %></strong>
+                <% if (u.bloodGroup) { %><div style="font-size:11px; color:var(--text-muted);"><%= u.bloodGroup %></div><% } %>
+              </div>
+            </div>
+          </td>
+          <td style="padding:14px 16px; color:var(--text-muted);"><%= u.email %></td>
+          <td style="padding:14px 16px; text-align:center;">
+            <span class="badge badge--<%= u.role === 'admin' ? 'warning' : 'success' %>"><%= u.role %></span>
+          </td>
+          <td style="padding:14px 16px; text-align:center; font-weight:700;"><%= u.totalReports || 0 %></td>
+          <td style="padding:14px 16px; text-align:center;">
+            <span class="badge badge--<%= u.isActive ? 'success' : 'danger' %>"><%= u.isActive ? 'Active' : 'Inactive' %></span>
+          </td>
+          <td style="padding:14px 16px; text-align:center; color:var(--text-muted); font-size:13px;"><%= new Date(u.createdAt).toLocaleDateString() %></td>
+          <td style="padding:14px 16px; text-align:center;">
+            <button onclick="toggleUser('<%= u._id %>', this)"
+              class="btn btn--sm btn--<%= u.isActive ? 'outline' : 'primary' %>"
+              style="font-size:12px;">
+              <i class="fas fa-<%= u.isActive ? 'ban' : 'check' %>"></i>
+              <%= u.isActive ? 'Deactivate' : 'Activate' %>
+            </button>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function toggleUser(id, btn) {
+  try {
+    const res = await fetch(`/admin/users/${id}/toggle`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.success) {
+      location.reload();
+    }
+  } catch (e) {
+    alert('Failed to update user status');
+  }
+}
+</script>
+
+<%- include('../partials/footer') %>

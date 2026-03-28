@@ -1,0 +1,127 @@
+```ejs
+<%- include('../partials/header') %>
+
+<div class="admin-page">
+  <!-- Stats -->
+  <div class="stats-grid" style="margin-bottom: 28px;">
+    <div class="stat-card stat-card--blue">
+      <div class="stat-card__icon"><i class="fas fa-users"></i></div>
+      <div class="stat-card__body">
+        <p class="stat-card__label">Total Users</p>
+        <h2 class="stat-card__value" data-count-to="<%= totalUsers %>"><%= totalUsers %></h2>
+        <p class="stat-card__sub">Registered patients</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--green">
+      <div class="stat-card__icon"><i class="fas fa-file-medical"></i></div>
+      <div class="stat-card__body">
+        <p class="stat-card__label">Total Reports</p>
+        <h2 class="stat-card__value" data-count-to="<%= totalReports %>"><%= totalReports %></h2>
+        <p class="stat-card__sub">Across all users</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--teal">
+      <div class="stat-card__icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="stat-card__body">
+        <p class="stat-card__label">Security Logs</p>
+        <h2 class="stat-card__value"><%= auditLogs.length %>+</h2>
+        <p class="stat-card__sub">Recent activities</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--orange">
+      <div class="stat-card__icon"><i class="fas fa-robot"></i></div>
+      <div class="stat-card__body">
+        <p class="stat-card__label">AI Engine</p>
+        <h2 class="stat-card__value">Active</h2>
+        <p class="stat-card__sub"><%= aiMode || 'Mock AI' %></p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+    <!-- Recent Users -->
+    <div class="detail-card">
+      <div class="detail-card__header">
+        <h3><i class="fas fa-users"></i> Recent Users</h3>
+        <a href="/admin/users" class="btn btn--outline btn--sm">View All</a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <% if (recentUsers.length === 0) { %>
+          <p style="text-align:center; color:var(--text-muted);">No users found</p>
+        <% } else { %>
+          <% recentUsers.slice(0, 8).forEach(u => { %>
+            <div style="display:flex; align-items:center; gap:12px; padding:10px; background:var(--bg); border-radius:10px;">
+              
+              <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:13px; flex-shrink:0;">
+                <%= u.firstName ? u.firstName[0] : '' %><%= u.lastName ? u.lastName[0] : '' %>
+              </div>
+
+              <div style="flex:1; min-width:0;">
+                <strong style="font-size:14px; display:block;">
+                  <%= u.firstName || '' %> <%= u.lastName || '' %>
+                </strong>
+                <span style="font-size:12px; color:var(--text-muted);"><%= u.email %></span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                <span class="badge badge--<%= u.role === 'admin' ? 'warning' : u.role === 'doctor' ? 'info' : 'success' %>" style="font-size:10px;">
+                  <%= u.role %>
+                </span>
+                <span style="font-size:10px; color:var(--text-light);">
+                  <%= new Date(u.createdAt).toLocaleDateString() %>
+                </span>
+              </div>
+
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Audit Logs -->
+    <div class="detail-card">
+      <div class="detail-card__header">
+        <h3><i class="fas fa-history"></i> Audit Log</h3>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
+        <% if (auditLogs.length === 0) { %>
+          <p style="text-align:center; color:var(--text-muted);">No logs available</p>
+        <% } else { %>
+          <% auditLogs.slice(0, 20).forEach(log => { %>
+            <div style="display:flex; gap:10px; padding:9px 12px; background:var(--bg); border-radius:8px; font-size:13px;">
+              
+              <span style="color:<%= log.status === 'success' ? 'var(--secondary-dark)' : 'var(--danger)' %>;">
+                <i class="fas fa-<%= log.status === 'success' ? 'check-circle' : 'times-circle' %>"></i>
+              </span>
+
+              <div style="flex:1; min-width:0;">
+                <strong><%= log.action %></strong>
+
+                <% if (log.user) { %>
+                  <span style="color:var(--text-muted);">
+                    — <%= log.user.firstName %> <%= log.user.lastName %>
+                  </span>
+                <% } %>
+
+                <div style="font-size:11px; color:var(--text-light);">
+                  <%= new Date(log.createdAt).toLocaleString() %> · <%= log.ip || 'unknown' %>
+                </div>
+              </div>
+
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+```

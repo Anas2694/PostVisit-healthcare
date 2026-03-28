@@ -1,0 +1,222 @@
+<%- include('../partials/header') %>
+
+<div class="chat-layout">
+  <!-- Chat Sidebar -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar__header">
+      <h3>Context</h3>
+    </div>
+    <div class="chat-sidebar__body">
+      <p class="context-label">Based on your reports:</p>
+      <% if (reports.length === 0) { %>
+      <div class="no-context">
+        <i class="fas fa-file-medical"></i>
+        <p>Upload reports to get contextual AI responses</p>
+        <a href="/reports/upload" class="btn btn--outline btn--sm">Upload Report</a>
+      </div>
+      <% } else { %>
+      <div class="context-reports">
+        <% reports.forEach(r => { %>
+        <div class="context-report">
+          <i class="fas fa-file-alt"></i>
+          <div>
+            <strong><%= r.title.substring(0, 30) %><%= r.title.length > 30 ? '...' : '' %></strong>
+            <p><%= r.reportType?.replace(/_/g, ' ') %></p>
+          </div>
+          <span class="badge badge--<%= r.analysis?.severity || 'info' %>"><%= r.analysis?.severity || 'N/A' %></span>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <div class="suggested-questions">
+        <p class="context-label">Quick Questions:</p>
+        <button class="quick-q" onclick="askQuestion('What do my blood sugar levels indicate?')">🩸 Blood sugar meaning?</button>
+        <button class="quick-q" onclick="askQuestion('What foods should I avoid based on my reports?')">🥗 Foods to avoid?</button>
+        <button class="quick-q" onclick="askQuestion('What are my main health risks?')">⚠️ My health risks?</button>
+        <button class="quick-q" onclick="askQuestion('Can you explain my cholesterol levels?')">❤️ Explain cholesterol</button>
+        <button class="quick-q" onclick="askQuestion('What follow-up tests should I get?')">🔬 Follow-up tests?</button>
+        <button class="quick-q" onclick="askQuestion('How can I improve my hemoglobin levels?')">💪 Improve hemoglobin?</button>
+      </div>
+    </div>
+    <div class="chat-sidebar__footer">
+      <a href="/chat/history" class="btn btn--ghost btn--sm btn--full"><i class="fas fa-history"></i> Chat History</a>
+    </div>
+  </div>
+
+  <!-- Chat Main -->
+  <div class="chat-main">
+    <div class="chat-header">
+      <div class="chat-bot-info">
+        <div class="bot-avatar"><i class="fas fa-robot"></i></div>
+        <div>
+          <h3>PostVisit AI Assistant</h3>
+          <span class="bot-status"><span class="status-dot"></span> Online & Ready</span>
+        </div>
+      </div>
+      <div class="chat-actions">
+        <button class="btn btn--ghost btn--sm" onclick="clearChat()" title="New chat">
+          <i class="fas fa-plus"></i> New Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome message -->
+      <div class="message message--bot">
+        <div class="message__avatar"><i class="fas fa-robot"></i></div>
+        <div class="message__content">
+          <div class="message__bubble">
+            <p>👋 Hello! I'm your PostVisit AI health assistant. I can help you:</p>
+            <ul>
+              <li>📊 Understand your medical report values</li>
+              <li>🍎 Get dietary and lifestyle advice</li>
+              <li>⚠️ Know your health risks and precautions</li>
+              <li>💊 Understand medications and follow-ups</li>
+            </ul>
+            <p><strong>Ask me anything about your health!</strong></p>
+          </div>
+          <span class="message__time">just now</span>
+        </div>
+      </div>
+
+      <!-- History messages -->
+      <% history.forEach(msg => { %>
+      <div class="message message--<%= msg.role === 'user' ? 'user' : 'bot' %>">
+        <% if (msg.role === 'assistant') { %>
+        <div class="message__avatar"><i class="fas fa-robot"></i></div>
+        <% } %>
+        <div class="message__content">
+          <div class="message__bubble"><%= msg.content %></div>
+          <span class="message__time"><%= new Date(msg.createdAt).toLocaleTimeString() %></span>
+        </div>
+        <% if (msg.role === 'user') { %>
+        <div class="message__avatar message__avatar--user"><i class="fas fa-user"></i></div>
+        <% } %>
+      </div>
+      <% }) %>
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing-indicator" id="typingIndicator" style="display:none">
+      <div class="message message--bot">
+        <div class="message__avatar"><i class="fas fa-robot"></i></div>
+        <div class="message__content">
+          <div class="message__bubble typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <form class="chat-form" id="chatForm">
+        <div class="chat-input-wrapper">
+          <textarea
+            id="messageInput"
+            placeholder="Ask about your health, reports, medications..."
+            rows="1"
+            maxlength="2000"
+            class="chat-input"
+          ></textarea>
+          <button type="submit" class="chat-send-btn" id="sendBtn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+        <p class="chat-disclaimer">AI responses are informational only. Always consult a doctor for medical advice.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const sessionId = '<%= sessionId %>';
+const chatMessages = document.getElementById('chatMessages');
+const messageInput = document.getElementById('messageInput');
+const chatForm = document.getElementById('chatForm');
+const typingIndicator = document.getElementById('typingIndicator');
+
+// Auto-scroll to bottom
+function scrollToBottom() {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+scrollToBottom();
+
+// Auto-resize textarea
+messageInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Send on Enter (Shift+Enter for newline)
+messageInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    chatForm.dispatchEvent(new Event('submit'));
+  }
+});
+
+function askQuestion(question) {
+  messageInput.value = question;
+  chatForm.dispatchEvent(new Event('submit'));
+}
+
+function addMessage(role, content) {
+  const time = new Date().toLocaleTimeString();
+  const el = document.createElement('div');
+  el.className = `message message--${role === 'user' ? 'user' : 'bot'}`;
+
+  const avatarHtml = role === 'assistant'
+    ? '<div class="message__avatar"><i class="fas fa-robot"></i></div>'
+    : '<div class="message__avatar message__avatar--user"><i class="fas fa-user"></i></div>';
+
+  const formattedContent = content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  el.innerHTML = role === 'user'
+    ? `<div class="message__content"><div class="message__bubble">${formattedContent}</div><span class="message__time">${time}</span></div>${avatarHtml}`
+    : `${avatarHtml}<div class="message__content"><div class="message__bubble">${formattedContent}</div><span class="message__time">${time}</span></div>`;
+
+  chatMessages.appendChild(el);
+  scrollToBottom();
+}
+
+chatForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const message = messageInput.value.trim();
+  if (!message) return;
+
+  addMessage('user', message);
+  messageInput.value = '';
+  messageInput.style.height = 'auto';
+
+  typingIndicator.style.display = 'block';
+  scrollToBottom();
+
+  try {
+    const res = await fetch('/chat/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, sessionId }),
+    });
+    const data = await res.json();
+    typingIndicator.style.display = 'none';
+
+    if (data.success) {
+      addMessage('assistant', data.message);
+    } else {
+      addMessage('assistant', '⚠️ Sorry, I encountered an error. Please try again.');
+    }
+  } catch (err) {
+    typingIndicator.style.display = 'none';
+    addMessage('assistant', '⚠️ Connection error. Please check your internet and try again.');
+  }
+});
+
+function clearChat() {
+  window.location.href = '/chat';
+}
+</script>
+
+<%- include('../partials/footer') %>

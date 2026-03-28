@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/landing.css">
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav__container">
+    <a href="/" class="nav__brand">
+      <div class="nav__icon"><i class="fas fa-heartbeat"></i></div>
+      <span>PostVisit</span>
+    </a>
+    <div class="nav__links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="/auth/login" class="nav__login">Sign In</a>
+      <a href="/auth/register" class="nav__cta">Get Started Free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero__bg">
+    <div class="hero__blob hero__blob--1"></div>
+    <div class="hero__blob hero__blob--2"></div>
+    <div class="hero__grid"></div>
+  </div>
+  <div class="hero__container">
+    <div class="hero__content">
+      <div class="hero__badge">
+        <i class="fas fa-sparkles"></i>
+        AI-Powered Health Intelligence
+      </div>
+      <h1 class="hero__title">
+        Understand Your
+        <em>Medical Reports</em>
+        Like Never Before
+      </h1>
+      <p class="hero__subtitle">
+        Upload your blood tests, MRIs, and lab reports. Our AI explains them in plain English, tracks your health trends, and gives personalized guidance — all in one secure platform.
+      </p>
+      <div class="hero__actions">
+        <a href="/auth/register" class="btn-hero btn-hero--primary">
+          <i class="fas fa-rocket"></i> Start Free Today
+        </a>
+        <a href="#how-it-works" class="btn-hero btn-hero--ghost">
+          <i class="fas fa-play-circle"></i> See How It Works
+        </a>
+      </div>
+      <div class="hero__stats">
+        <div class="stat"><span class="stat__num">10K+</span><span class="stat__label">Reports Analyzed</span></div>
+        <div class="stat"><span class="stat__num">98%</span><span class="stat__label">Accuracy Rate</span></div>
+        <div class="stat"><span class="stat__num">50+</span><span class="stat__label">Health Metrics</span></div>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <div class="dashboard-preview">
+        <div class="preview__header">
+          <div class="preview__dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="preview__title">Health Dashboard</span>
+        </div>
+        <div class="preview__body">
+          <div class="preview__card preview__card--green">
+            <i class="fas fa-tint"></i>
+            <div>
+              <p>Blood Sugar</p>
+              <strong>92 mg/dL</strong>
+              <span class="tag tag--normal">Normal</span>
+            </div>
+          </div>
+          <div class="preview__card preview__card--blue">
+            <i class="fas fa-heart"></i>
+            <div>
+              <p>Cholesterol</p>
+              <strong>185 mg/dL</strong>
+              <span class="tag tag--normal">Normal</span>
+            </div>
+          </div>
+          <div class="preview__card preview__card--orange">
+            <i class="fas fa-lungs"></i>
+            <div>
+              <p>Hemoglobin</p>
+              <strong>11.2 g/dL</strong>
+              <span class="tag tag--warn">Low</span>
+            </div>
+          </div>
+          <div class="preview__chart">
+            <p class="chart-label">Blood Sugar Trend (6 months)</p>
+            <div class="chart-bars">
+              <div class="bar" style="height:55%"></div>
+              <div class="bar" style="height:70%"></div>
+              <div class="bar" style="height:60%"></div>
+              <div class="bar" style="height:80%"></div>
+              <div class="bar" style="height:65%"></div>
+              <div class="bar" style="height:72%"></div>
+              <div class="bar bar--active" style="height:58%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="section-container">
+    <div class="section-header">
+      <p class="section-tag">Features</p>
+      <h2>Everything you need to understand your health</h2>
+      <p class="section-sub">Powered by AI, designed for patients, trusted by doctors</p>
+    </div>
+    <div class="features__grid">
+      <div class="feature-card feature-card--primary">
+        <div class="feature-icon"><i class="fas fa-brain"></i></div>
+        <h3>AI Report Analysis</h3>
+        <p>Upload any medical report and get a plain-English explanation with key findings, severity assessment, and personalized recommendations within seconds.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>Health Trend Dashboard</h3>
+        <p>Interactive charts showing your blood sugar, cholesterol, BP, and hemoglobin trends over time. Spot patterns before they become problems.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-robot"></i></div>
+        <h3>AI Health Chatbot</h3>
+        <p>Ask your AI assistant anything — "Can I eat sugar?" "What does this value mean?" Context-aware answers based on your actual reports.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>Risk Prediction Engine</h3>
+        <p>Rule-based risk detection for diabetes, heart disease, anemia, and kidney issues — with prevention tips tailored to your data.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-bell"></i></div>
+        <h3>Smart Reminders</h3>
+        <p>Set medication reminders, follow-up alerts, and health check notifications. Delivered via email and in-app with flexible scheduling.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-file-pdf"></i></div>
+        <h3>PDF Report Export</h3>
+        <p>Download beautifully formatted PDF health reports with AI insights, risk assessments, dietary advice, and follow-up recommendations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works" id="how-it-works">
+  <div class="section-container">
+    <div class="section-header">
+      <p class="section-tag">Process</p>
+      <h2>From upload to insights in 3 steps</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step__num">01</div>
+        <div class="step__icon"><i class="fas fa-cloud-upload-alt"></i></div>
+        <h3>Upload Your Report</h3>
+        <p>Upload PDF or image of any medical report — blood tests, MRI, X-rays, pathology reports. Encrypted and stored securely.</p>
+      </div>
+      <div class="step__connector"></div>
+      <div class="step">
+        <div class="step__num">02</div>
+        <div class="step__icon"><i class="fas fa-cog fa-spin"></i></div>
+        <h3>AI Processes It</h3>
+        <p>Our OCR engine extracts values, identifies medical parameters, and our AI generates insights, risk assessments, and recommendations.</p>
+      </div>
+      <div class="step__connector"></div>
+      <div class="step">
+        <div class="step__num">03</div>
+        <div class="step__icon"><i class="fas fa-lightbulb"></i></div>
+        <h3>Get Clear Insights</h3>
+        <p>View your personalized health dashboard, download PDF reports, chat with the AI assistant, and track trends over time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-section__inner">
+    <h2>Take charge of your health today</h2>
+    <p>Join thousands of patients who understand their health better with PostVisit.</p>
+    <a href="/auth/register" class="btn-hero btn-hero--white">
+      <i class="fas fa-user-plus"></i> Create Free Account
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="landing-footer">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <div class="nav__icon"><i class="fas fa-heartbeat"></i></div>
+      <span>PostVisit</span>
+    </div>
+    <p class="footer-disclaimer">⚠️ PostVisit provides AI-generated health insights for informational purposes only. Always consult a qualified medical professional for diagnosis and treatment.</p>
+    <p class="footer-copy">&copy; <%= new Date().getFullYear() %> PostVisit. Built for better health outcomes.</p>
+  </div>
+</footer>
+
+<link rel="stylesheet" href="/css/landing.css">
+</body>
+</html>
