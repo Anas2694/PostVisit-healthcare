@@ -416,6 +416,68 @@ exports.generateReportPDF = async (report, user) => {
   });
 };
 
+exports.generateHealthSummaryPDF = async (summary) => {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50 });
+    const buffers = [];
+
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => resolve(Buffer.concat(buffers)));
+    doc.on('error', reject);
+
+    doc.rect(0, 0, doc.page.width, 84).fill('#1a6b8a');
+    doc.fillColor('white').fontSize(20).text('PostVisit Full Health Summary', 50, 30);
+    doc.fontSize(9).text(`Generated: ${new Date(summary.generatedAt || Date.now()).toLocaleString()}`, 50, 56);
+    doc.moveDown(3);
+
+    const profile = summary.profile || {};
+    sectionTitle(doc, 'Profile');
+    drawTable(doc, ['Field', 'Value'], [
+      ['Name', profile.fullName || 'N/A'],
+      ['Age/Gender', `${profile.age || 'N/A'} / ${profile.gender || 'N/A'}`],
+      ['Blood Group', profile.bloodGroup || 'N/A'],
+      ['Phone', profile.phone || 'N/A'],
+      ['Allergies', (profile.allergies || []).join(', ') || 'None recorded'],
+      ['Chronic Conditions', (profile.chronicConditions || []).join(', ') || 'None recorded'],
+      ['Emergency Contact', profile.emergencyContact?.name ? `${profile.emergencyContact.name} (${profile.emergencyContact.phone || 'N/A'})` : 'N/A'],
+    ]);
+
+    writeSectionList(doc, 'Latest Reports', (summary.latestReports || []).map(report => (
+      `${report.title} - ${report.status} - ${report.summary || 'No summary available'}`
+    )));
+
+    writeSectionList(doc, 'Visual Alerts', (summary.risks?.alerts || []).map(alert => (
+      `${alert.label}: ${alert.value} ${alert.unit} (${alert.status}; normal ${alert.normalRange})`
+    )));
+
+    sectionTitle(doc, 'Trend Comparison');
+    drawTable(doc, ['Metric', 'Latest', 'Normal'], (summary.trends || []).slice(0, 12).map(trend => [
+      trend.label,
+      `${trend.latest?.value ?? 'N/A'} ${trend.unit || ''}`,
+      trend.normalRange || 'N/A',
+    ]));
+
+    sectionTitle(doc, 'Risk Score History');
+    drawTable(doc, ['Date', 'Score', 'Level'], (summary.risks?.history || []).slice(-10).map(point => [
+      point.date ? new Date(point.date).toLocaleDateString() : 'N/A',
+      point.score,
+      point.level,
+    ]));
+
+    writeSectionList(doc, 'Health Goals', (summary.goals || []).map(goal => (
+      `${goal.title}: current ${goal.currentValue ?? 'N/A'} ${goal.unit}, target ${goal.operator === 'gte' ? '>=' : '<='} ${goal.targetValue} ${goal.unit} (${goal.achieved ? 'achieved' : 'in progress'})`
+    )));
+
+    writeSectionList(doc, 'Recommendations', summary.recommendations || []);
+
+    doc.moveDown(2);
+    doc.fontSize(9).fillColor('gray')
+      .text('DISCLAIMER: This summary is generated for informational purposes only. Consult a qualified healthcare professional for medical advice.', { align: 'center' });
+
+    doc.end();
+  });
+};
+
 
 
 // ===== HELPER FUNCTIONS =====
@@ -435,6 +497,12 @@ function sectionTitle(doc, title) {
 function drawTable(doc, headers, rows) {
   const startX = 50;
   let y = doc.y;
+
+  if (!rows.length) {
+    doc.font('Helvetica').fillColor('black').text('No data available.');
+    doc.moveDown();
+    return;
+  }
 
   doc.font('Helvetica-Bold');
   headers.forEach((h, i) => {
@@ -456,4 +524,21 @@ function drawTable(doc, headers, rows) {
 function clean(text) {
   if (!text) return '';
   return text.replace(/[^\x20-\x7E]/g, '').trim();
+}
+
+function writeSectionList(doc, title, rows) {
+  sectionTitle(doc, title);
+  if (!rows || rows.length === 0) {
+    doc.font('Helvetica').fillColor('black').text('No data available.');
+    doc.moveDown();
+    return;
+  }
+
+  rows.slice(0, 12).forEach(row => {
+    if (doc.y > doc.page.height - 90) doc.addPage();
+    doc.font('Helvetica').fontSize(10).fillColor('black').text(`- ${clean(row)}`, {
+      lineGap: 2,
+    });
+  });
+  doc.moveDown();
 }

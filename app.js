@@ -14,9 +14,11 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const jwt = require('jsonwebtoken');
+const hpp = require('hpp');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -73,19 +75,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(mongoSanitize());
+app.use(hpp());
 app.use(methodOverride('_method'));
 
 // ========================
 // SESSION + FLASH
 // ========================
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/postvisit';
+const sessionSecret = process.env.SESSION_SECRET || 'postvisit_dev_secret_change_me';
+
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('[Security] SESSION_SECRET is not set. Configure a strong secret before production use.');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'postvisit_secret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false, // 🔥 IMPORTANT FIX
+  store: MongoStore.create({
+    mongoUrl: mongoUri,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60,
+  }),
   cookie: {
-    secure: false, // true only in production (HTTPS)
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 1 day
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
   },
 }));
 
@@ -151,11 +167,21 @@ app.get('/', (req, res) => {
 // ERROR HANDLING
 // ========================
 app.use((req, res) => {
+  if (req.originalUrl?.startsWith('/api/')) {
+    return res.status(404).json({ success: false, message: 'Route not found' });
+  }
   res.status(404).render('errors/404', { title: 'Page Not Found' });
 });
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
+
+  if (req.originalUrl?.startsWith('/api/') || req.headers.accept?.includes('application/json')) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Server error',
+    });
+  }
 
   res.status(err.statusCode || 500).render('errors/error', {
     title: 'Error',

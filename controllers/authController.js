@@ -18,6 +18,15 @@
 const User = require('../models/User');
 const { AuditLog } = require('../models/index');
 const emailService = require('../services/notifications/emailService');
+const crypto = require('crypto');
+
+const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+function parseList(value) {
+  if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map(v => v.trim()).filter(Boolean);
+  return value;
+}
 
 // ========================
 // Helper: Send JWT via cookie + session
@@ -193,7 +202,8 @@ exports.forgotPassword = async (req, res, next) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.APP_URL}/auth/reset-password/${resetToken}`;
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const resetUrl = `${appUrl}/auth/reset-password/${resetToken}`;
     try {
       await emailService.sendPasswordResetEmail(user, resetUrl);
     } catch (e) {
@@ -206,6 +216,78 @@ exports.forgotPassword = async (req, res, next) => {
 
     req.flash('success_msg', 'Password reset link sent to your email.');
     res.redirect('/auth/forgot-password');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ========================
+// GET /auth/reset-password/:token
+// Backend-only reset token validation endpoint
+// ========================
+exports.getResetPassword = async (req, res, next) => {
+  try {
+    const passwordResetToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken,
+      passwordResetExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Reset token is invalid or expired' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Reset token is valid. Submit a POST request with password and confirmPassword to complete reset.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ========================
+// POST /auth/reset-password/:token
+// ========================
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { password, confirmPassword } = req.body;
+
+    if (!PASSWORD_RULE.test(password || '')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters and include uppercase, lowercase, and number',
+      });
+    }
+
+    if (confirmPassword !== undefined && password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+
+    const passwordResetToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken,
+      passwordResetExpire: { $gt: Date.now() },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Reset token is invalid or expired' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpire = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successful. Please log in with the new password.' });
   } catch (error) {
     next(error);
   }
@@ -230,12 +312,14 @@ exports.updateProfile = async (req, res, next) => {
   try {
     const allowedFields = [
       'firstName', 'lastName', 'phone', 'dateOfBirth',
-      'gender', 'bloodGroup', 'allergies', 'chronicConditions', 'address',
+      'gender', 'bloodGroup', 'allergies', 'chronicConditions', 'address', 'emergencyContact',
     ];
     const updateData = {};
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) updateData[field] = req.body[field];
     });
+    if (updateData.allergies !== undefined) updateData.allergies = parseList(updateData.allergies);
+    if (updateData.chronicConditions !== undefined) updateData.chronicConditions = parseList(updateData.chronicConditions);
 
     await User.findByIdAndUpdate(
       req.user._id || req.user.id,
@@ -255,11 +339,21 @@ exports.updateProfile = async (req, res, next) => {
 // ========================
 exports.changePassword = async (req, res, next) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
     const user = await User.findById(req.user._id || req.user.id).select('+password');
 
     if (!(await user.matchPassword(currentPassword))) {
       req.flash('error_msg', 'Current password is incorrect');
+      return res.redirect('/auth/profile');
+    }
+
+    if (!PASSWORD_RULE.test(newPassword || '')) {
+      req.flash('error_msg', 'New password must be at least 8 characters and include uppercase, lowercase, and number');
+      return res.redirect('/auth/profile');
+    }
+
+    if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+      req.flash('error_msg', 'New passwords do not match');
       return res.redirect('/auth/profile');
     }
 

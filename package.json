@@ -12,8 +12,9 @@
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.5.1",
     "bcryptjs": "^2.4.3",
-    "cloudinary": "^1.41.0",
+    "cloudinary": "^2.10.0",
     "connect-flash": "^0.1.1",
+    "connect-mongo": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "csv-stringify": "^6.4.4",
@@ -32,14 +33,12 @@
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0",
-    "node-cron": "^3.0.2",
+    "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^6.9.5",
-    "pdfjs-dist": "^3.11.174",
+    "nodemailer": "^8.0.10",
+    "pdfjs-dist": "^6.0.227",
     "pdfkit": "^0.14.0",
-    "uuid": "^9.0.0",
-    "xss-clean": "^0.1.4"
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

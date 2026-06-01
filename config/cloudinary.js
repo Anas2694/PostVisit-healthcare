@@ -18,7 +18,6 @@ let upload, cloudinary, getSignedUrl, deleteFile;
 if (HAS_CLOUDINARY) {
   // ---- Cloudinary mode ----
   cloudinary = require('cloudinary').v2;
-  const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -26,23 +25,41 @@ if (HAS_CLOUDINARY) {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  const reportStorage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-      const isImage = file.mimetype.startsWith('image/');
-      return {
-        folder: `postvisit/reports/${req.user.id}`,
-        resource_type: isImage ? 'image' : 'raw',
-        public_id: `report_${Date.now()}`,
-      };
-    },
-  });
-
-  upload = multer({
-    storage: reportStorage,
+  const memoryUpload = multer({
+    storage: multer.memoryStorage(),
     fileFilter: _fileFilter,
     limits: { fileSize: 10 * 1024 * 1024 },
   });
+
+  upload = {
+    single: (fieldName) => {
+      const mid = memoryUpload.single(fieldName);
+      return (req, res, next) => {
+        mid(req, res, async (err) => {
+          if (err) return next(err);
+          if (!req.file) return next();
+
+          try {
+            const isImage = req.file.mimetype.startsWith('image/');
+            const resourceType = isImage ? 'image' : 'raw';
+            const result = await uploadBufferToCloudinary(req.file.buffer, {
+              folder: `postvisit/reports/${req.user.id}`,
+              resource_type: resourceType,
+              public_id: `report_${Date.now()}`,
+            });
+
+            req.file.path = result.secure_url;
+            req.file.filename = result.public_id;
+            req.file.resourceType = resourceType;
+            req.file.size = req.file.size || result.bytes;
+            next();
+          } catch (uploadError) {
+            next(uploadError);
+          }
+        });
+      };
+    },
+  };
 
   getSignedUrl = (publicId) => {
     try {
@@ -84,9 +101,10 @@ if (HAS_CLOUDINARY) {
         mid(req, res, (err) => {
           if (err) return next(err);
           if (req.file) {
-            // Normalize to Cloudinary-style fields
-            req.file.path = `/uploads/${req.file.filename}`;
-            req.file.filename = `local_${req.file.filename}`;
+            const diskFilename = req.file.filename;
+            req.file.localPath = req.file.path;
+            req.file.path = `/uploads/${diskFilename}`;
+            req.file.filename = `local_${diskFilename}`;
           }
           next();
         });
@@ -94,10 +112,18 @@ if (HAS_CLOUDINARY) {
     },
   };
 
-  getSignedUrl = (publicId) => publicId; // local path IS the URL
+  getSignedUrl = (publicId) => {
+    if (!publicId) return publicId;
+    if (publicId.startsWith('local_')) return `/uploads/${publicId.slice('local_'.length)}`;
+    return publicId;
+  };
   deleteFile = async (publicId) => {
     try {
-      const filePath = path.join(__dirname, '..', 'public', publicId.replace('/uploads/', 'uploads/'));
+      if (!publicId) return;
+      const filename = publicId.startsWith('local_')
+        ? publicId.slice('local_'.length)
+        : publicId.replace(/^\/?uploads[\\/]/, '');
+      const filePath = path.join(uploadDir, path.basename(filename));
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch (e) { /* ignore */ }
   };
@@ -112,6 +138,16 @@ function _fileFilter(req, file, cb) {
   } else {
     cb(new Error('Only PDF and images (JPG, PNG, WebP) are allowed'), false);
   }
+}
+
+function uploadBufferToCloudinary(buffer, options) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+    stream.end(buffer);
+  });
 }
 
 module.exports = { upload, cloudinary, getSignedUrl, deleteFile, HAS_CLOUDINARY };

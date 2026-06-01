@@ -38,6 +38,7 @@ const ReportSchema = new mongoose.Schema({
   file: {
     url: { type: String, required: true },         // Cloudinary URL
     publicId: { type: String, required: true },    // Cloudinary public_id
+    localPath: { type: String },                   // Disk path for local fallback/OCR
     resourceType: { type: String, default: 'raw' },// 'image' or 'raw'
     originalName: { type: String },
     mimeType: { type: String },

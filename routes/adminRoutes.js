@@ -18,7 +18,7 @@ router.get('/', async (req, res, next) => {
       User.find().sort({ createdAt: -1 }).limit(10).select('-password'),
       AuditLog.find().sort({ createdAt: -1 }).limit(20).populate('user', 'firstName lastName email'),
     ]);
-    res.render('admin/index', { title: 'Admin Dashboard', totalUsers, totalReports, recentUsers, auditLogs, aiMode: process.env.OPENAI_API_KEY ? 'OpenAI' : 'Mock AI' });
+    res.render('admin/index', { title: 'Admin Dashboard', totalUsers, totalReports, recentUsers, auditLogs, aiMode: process.env.GEMINI_API_KEY ? 'Gemini' : 'Mock AI' });
   } catch (e) { next(e); }
 });
 

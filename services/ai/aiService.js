@@ -5,7 +5,9 @@
  */
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 
 const axios = require('axios');
 
@@ -347,6 +349,10 @@ const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 exports.chat = async (message, healthContext, conversationHistory = []) => {
+  if (!process.env.GEMINI_API_KEY) {
+    return mockChat(message, healthContext);
+  }
+
   try {
     // ✅ Build conversation with memory
     const contents = [
@@ -402,15 +408,14 @@ Rules:
     const data = await response.json();
 
     // ✅ Debug log
-    console.log("Gemini RAW response:", JSON.stringify(data, null, 2));
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Gemini RAW response:", JSON.stringify(data, null, 2));
+    }
 
     // ❌ Handle API error
     if (data.error) {
       console.error("Gemini API ERROR:", data.error);
-      return {
-        message: "AI service error. Please try again.",
-        tokens: 0
-      };
+      return mockChat(message, healthContext);
     }
 
     // ✅ Extract response safely
@@ -426,10 +431,7 @@ Rules:
   } catch (error) {
     console.error("Gemini API error:", error.message);
 
-    return {
-      message: "AI is currently unavailable. Please try again later.",
-      tokens: 0
-    };
+    return mockChat(message, healthContext);
   }
 };
 

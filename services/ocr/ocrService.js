@@ -17,6 +17,8 @@
  */
 
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 
 // ─── Reference ranges ─────────────────────────────────────────────────────────
 const RANGES = {
@@ -60,17 +62,25 @@ function getStatus(label, value) {
 
 // ─── PDF extraction using pdfjs-dist coordinate-based parsing ─────────────────
 async function extractPDFValues(fileUrl) {
-  const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+  const pdfjsLib = await loadPdfJs();
 
   let source;
   if (typeof fileUrl === 'string' && fileUrl.startsWith('http')) {
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer', timeout: 25000 });
     source = { data: new Uint8Array(response.data) };
+  } else if (typeof fileUrl === 'string' && fileUrl.startsWith('/uploads/')) {
+    source = { url: path.join(__dirname, '..', '..', 'public', fileUrl) };
+  } else if (typeof fileUrl === 'string' && fs.existsSync(fileUrl)) {
+    source = { url: fileUrl };
   } else {
     source = { url: fileUrl };
   }
 
-  const doc = await pdfjsLib.getDocument(source).promise;
+  const doc = await pdfjsLib.getDocument({
+    ...source,
+    disableJavaScript: true,
+    isEvalSupported: false,
+  }).promise;
   const extracted = {};
   let fullText = '';
 
@@ -269,4 +279,12 @@ async function extractWithGoogleVision(imageUrl) {
     extracted: {},
     confidence: Math.round((annotation?.pages?.[0]?.confidence || 0.8) * 100),
   };
+}
+
+async function loadPdfJs() {
+  try {
+    return require('pdfjs-dist/legacy/build/pdf.js');
+  } catch (error) {
+    return import('pdfjs-dist/legacy/build/pdf.mjs');
+  }
 }

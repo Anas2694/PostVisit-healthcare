@@ -20,6 +20,15 @@ const Report = require('../models/Report');
 const aiService = require('../services/ai/aiService');
 const { v4: uuidv4 } = require('uuid');
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── GET /chat ────────────────────────────────────────────────────────────────
 exports.getChatPage = async (req, res, next) => {
   try {
@@ -61,6 +70,7 @@ exports.sendMessage = async (req, res, next) => {
     }
 
     const trimmed = message.trim();
+    const safeUserMessage = escapeHtml(trimmed);
 
     // ── FIX 1: Fetch history BEFORE saving the new message ─────────────────
     // Previously: save → fetch (new msg included → sent twice to OpenAI)
@@ -77,7 +87,7 @@ exports.sendMessage = async (req, res, next) => {
     await ChatMessage.create({
       user: userId,
       role: 'user',
-      content: trimmed,
+      content: safeUserMessage,
       sessionId,
       relatedReport: reportId || req.session.chatReportId || undefined,
     });
@@ -90,18 +100,19 @@ exports.sendMessage = async (req, res, next) => {
 
     // Call AI
     const aiResponse = await aiService.chat(trimmed, context, conversationHistory);
+    const safeAiMessage = escapeHtml(aiResponse.message);
 
     const savedResponse = await ChatMessage.create({
       user: userId,
       role: 'assistant',
-      content: aiResponse.message,
+      content: safeAiMessage,
       sessionId,
       tokens: aiResponse.tokens || 0,
     });
 
     res.json({
       success: true,
-      message: aiResponse.message,
+      message: safeAiMessage,
       messageId: savedResponse._id,
       timestamp: savedResponse.createdAt,
     });

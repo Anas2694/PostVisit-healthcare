@@ -22,7 +22,7 @@ const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(e => e.msg);
-    if (req.path.startsWith('/api/') || req.xhr) {
+    if (req.originalUrl?.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
       return res.status(422).json({ success: false, errors: errors.array(), message: errorMessages[0] });
     }
     req.flash('error_msg', errorMessages[0]);

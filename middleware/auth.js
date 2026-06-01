@@ -7,6 +7,11 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { AuditLog } = require('../models/index');
 
+const wantsJson = (req) =>
+  req.originalUrl?.startsWith('/api/') ||
+  req.xhr ||
+  req.headers.accept?.includes('application/json');
+
 /**
  * Protect routes — requires valid JWT
  */
@@ -27,7 +32,7 @@ const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    if (req.path.startsWith('/api/')) {
+    if (wantsJson(req)) {
       return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
     }
     req.flash('error_msg', 'Please log in to access this page');
@@ -39,7 +44,7 @@ const protect = async (req, res, next) => {
     const user = await User.findById(decoded.id);
 
     if (!user || !user.isActive) {
-      if (req.path.startsWith('/api/')) {
+      if (wantsJson(req)) {
         return res.status(401).json({ success: false, message: 'User no longer active' });
       }
       return res.redirect('/auth/login');
@@ -49,7 +54,7 @@ const protect = async (req, res, next) => {
     res.locals.currentUser = user;
     next();
   } catch (err) {
-    if (req.path.startsWith('/api/')) {
+    if (wantsJson(req)) {
       return res.status(401).json({ success: false, message: 'Token is invalid or expired' });
     }
     req.flash('error_msg', 'Session expired. Please log in again.');
@@ -81,7 +86,7 @@ const optionalAuth = async (req, res, next) => {
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      if (req.path.startsWith('/api/')) {
+      if (wantsJson(req)) {
         return res.status(403).json({ success: false, message: 'Insufficient permissions' });
       }
       req.flash('error_msg', 'You do not have permission to access this page');

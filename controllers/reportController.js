@@ -5,13 +5,14 @@
 
 const Report = require('../models/Report');
 const Analysis = require('../models/Analysis');
-const { HealthMetrics, Notification } = require('../models/index');
+const { HealthMetrics, Notification, HealthGoal } = require('../models/index');
 const User = require('../models/User');
 const aiService = require('../services/ai/aiService');
 const ocrService = require('../services/ocr/ocrService');
 const pdfService = require('../services/pdf/pdfService');
 const { getSignedUrl, deleteFile } = require('../config/cloudinary');
 const { stringify } = require('csv-stringify/sync');
+const { buildHealthSummaryData, buildAbnormalExplanationCards } = require('../utils/healthInsights');
 
 // GET /reports
 exports.getReports = async (req, res, next) => {
@@ -79,6 +80,7 @@ exports.uploadReport = async (req, res, next) => {
       file: {
         url: req.file.path,
         publicId: req.file.filename,
+        localPath: req.file.localPath,
         resourceType: req.file.mimetype?.startsWith('image/') ? 'image' : 'raw',
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
@@ -111,7 +113,7 @@ async function processReportAsync(reportId, user) {
     await report.save();
 
     // OCR
-    const ocrResult = await ocrService.extractText(report.file.url, report.file.mimeType);
+    const ocrResult = await ocrService.extractText(report.file.localPath || report.file.url, report.file.mimeType);
     report.extractedText = ocrResult.text;
     report.ocrConfidence = ocrResult.confidence;
 
@@ -163,6 +165,23 @@ async function processReportAsync(reportId, user) {
       actionUrl: `/reports/${report._id}`,
     });
 
+    const abnormalCards = buildAbnormalExplanationCards(report);
+    if (abnormalCards.length) {
+      await Notification.create({
+        user: user._id,
+        type: 'health_alert',
+        title: 'Abnormal values detected',
+        message: abnormalCards
+          .slice(0, 4)
+          .map(item => `${item.label}: ${item.value} ${item.unit} (${item.status})`)
+          .join('; '),
+        relatedReport: report._id,
+        relatedAnalysis: analysis._id,
+        priority: abnormalCards.some(item => item.status === 'critical') ? 'high' : 'medium',
+        actionUrl: `/reports/${report._id}`,
+      });
+    }
+
     console.log(`✅ Report ${reportId} analyzed (${Date.now() - t0}ms)`);
   } catch (err) {
     console.error(`❌ Processing failed for report ${reportId}:`, err.message);
@@ -189,7 +208,22 @@ async function saveHealthMetrics(report, userId) {
     if (v.bloodPressure?.systolic?.value) m.bloodPressureSystolic = v.bloodPressure.systolic.value;
     if (v.bloodPressure?.diastolic?.value) m.bloodPressureDiastolic = v.bloodPressure.diastolic.value;
     if (v.creatinine?.value) m.creatinine = v.creatinine.value;
-    if (Object.keys(m).length > 4) await HealthMetrics.create(m);
+    if (v.uricAcid?.value) m.uricAcid = v.uricAcid.value;
+    if (v.alt?.value) m.alt = v.alt.value;
+    if (v.ast?.value) m.ast = v.ast.value;
+    if (v.alkalinePhosphatase?.value) m.alkalinePhosphatase = v.alkalinePhosphatase.value;
+    if (v.tsh?.value) m.tsh = v.tsh.value;
+    if (v.wbc?.value) m.wbc = v.wbc.value;
+    if (v.rbc?.value) m.rbc = v.rbc.value;
+    if (v.platelets?.value) m.platelets = v.platelets.value;
+    if (v.bmi?.value) m.bmi = v.bmi.value;
+    if (Object.keys(m).length > 4) {
+      await HealthMetrics.findOneAndUpdate(
+        { user: userId, report: report._id },
+        m,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
   } catch (e) { console.error('HealthMetrics save error:', e.message); }
 }
 
@@ -245,6 +279,33 @@ exports.downloadReport = async (req, res, next) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('PDF download error:', error);
+    next(error);
+  }
+};
+
+// GET /reports/export/health-summary
+exports.downloadHealthSummary = async (req, res, next) => {
+  try {
+    const [user, reports, metrics, goals, notifications] = await Promise.all([
+      User.findById(req.user._id || req.user.id),
+      Report.find({ user: req.user._id || req.user.id, isArchived: false })
+        .populate('analysis', 'summary severity recommendations keyFindings riskPredictions')
+        .sort({ reportDate: -1, createdAt: -1 })
+        .limit(25),
+      HealthMetrics.find({ user: req.user._id || req.user.id }).sort({ date: 1 }).limit(500),
+      HealthGoal.find({ user: req.user._id || req.user.id }).sort({ isActive: -1, createdAt: -1 }),
+      Notification.find({ user: req.user._id || req.user.id }).sort({ createdAt: -1 }).limit(50),
+    ]);
+
+    const summary = buildHealthSummaryData({ user, reports, metrics, goals, notifications });
+    const pdfBuffer = await pdfService.generateHealthSummaryPDF(summary);
+    const filename = `PostVisit_Full_Health_Summary_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (error) {
     next(error);
   }
 };

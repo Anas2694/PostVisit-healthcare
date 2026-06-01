@@ -82,6 +82,10 @@ const HealthMetricsSchema = new mongoose.Schema({
   triglycerides: Number,
   creatinine: Number,
   uricAcid: Number,
+  alt: Number,
+  ast: Number,
+  alkalinePhosphatase: Number,
+  tsh: Number,
   wbc: Number,
   rbc: Number,
   platelets: Number,
@@ -169,4 +173,58 @@ MedicationSchema.index({ user: 1, isActive: 1 });
 
 const Medication = mongoose.model('Medication', MedicationSchema);
 
-module.exports = { Notification, HealthMetrics, ChatMessage, AuditLog, Medication };
+// ========================
+// Health Goal Model
+// ========================
+
+const HealthGoalSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  title: { type: String, required: true, trim: true, maxlength: 120 },
+  metric: {
+    type: String,
+    required: true,
+    enum: [
+      'bloodSugarFasting',
+      'bloodSugarPostprandial',
+      'hba1c',
+      'hemoglobin',
+      'cholesterolTotal',
+      'cholesterolHDL',
+      'cholesterolLDL',
+      'triglycerides',
+      'bloodPressureSystolic',
+      'bloodPressureDiastolic',
+      'creatinine',
+      'uricAcid',
+      'wbc',
+      'rbc',
+      'platelets',
+      'bmi',
+      'heartRate',
+      'oxygenSaturation',
+      'temperature',
+      'alt',
+      'ast',
+      'alkalinePhosphatase',
+      'tsh',
+    ],
+  },
+  targetOperator: { type: String, enum: ['lte', 'gte'], default: 'lte' },
+  targetValue: { type: Number, required: true },
+  unit: String,
+  dueDate: Date,
+  notes: { type: String, trim: true, maxlength: 500 },
+  isActive: { type: Boolean, default: true },
+  achievedAt: Date,
+}, { timestamps: true });
+
+HealthGoalSchema.index({ user: 1, isActive: 1 });
+HealthGoalSchema.index({ user: 1, metric: 1 });
+
+const HealthGoal = mongoose.model('HealthGoal', HealthGoalSchema);
+
+module.exports = { Notification, HealthMetrics, ChatMessage, AuditLog, Medication, HealthGoal };
