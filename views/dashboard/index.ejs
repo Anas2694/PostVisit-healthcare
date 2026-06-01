@@ -114,6 +114,159 @@
 </div>
 <% } %>
 
+<!-- Health Insights -->
+<div class="insights-grid">
+  <div class="chart-card">
+    <div class="chart-card__header">
+      <h3>Health Timeline</h3>
+      <a href="/api/v1/timeline" class="link-sm" target="_blank">View JSON</a>
+    </div>
+    <% if (timelineEvents && timelineEvents.length) { %>
+    <div class="mini-list">
+      <% timelineEvents.slice(0, 5).forEach(event => { %>
+      <div class="mini-list__item">
+        <div class="mini-list__icon mini-list__icon--<%= event.type === 'alert' ? 'danger' : event.type === 'reminder' ? 'warning' : 'info' %>">
+          <i class="fas fa-<%= event.type === 'alert' ? 'exclamation-triangle' : event.type === 'reminder' ? 'bell' : event.type === 'metric_change' ? 'chart-line' : 'file-medical' %>"></i>
+        </div>
+        <div class="mini-list__body">
+          <strong><%= event.title %></strong>
+          <p><%= event.description || event.dateLabel %></p>
+          <span><%= event.dateLabel %></span>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="chart-empty"><i class="fas fa-stream"></i><p>No timeline activity yet.</p></div>
+    <% } %>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__header">
+      <h3>Visual Alerts</h3>
+      <a href="/api/v1/alerts" class="link-sm" target="_blank">View all</a>
+    </div>
+    <% if (visualAlerts && visualAlerts.length) { %>
+    <div class="alerts-list alerts-list--compact">
+      <% visualAlerts.slice(0, 4).forEach(alert => { %>
+      <div class="alert-item alert-item--<%= alert.status === 'high' ? 'high' : alert.status === 'low' ? 'medium' : 'low' %>">
+        <div class="alert-item__icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="alert-item__body">
+          <strong><%= alert.label %></strong>
+          <p><%= alert.value %> <%= alert.unit %> &bull; Normal: <%= alert.normalRange %></p>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="chart-empty"><i class="fas fa-check-circle"></i><p>No abnormal metric alerts right now.</p></div>
+    <% } %>
+  </div>
+</div>
+
+<% if (hasMetrics) { %>
+<div class="charts-section">
+  <div class="chart-card chart-card--wide">
+    <div class="chart-card__header">
+      <h3>Trend Comparison With Normal Ranges</h3>
+      <a href="/api/v1/trends" class="link-sm" target="_blank">View API</a>
+    </div>
+    <div class="trend-table">
+      <% trendComparisons.slice(0, 6).forEach(trend => { %>
+      <div class="trend-row">
+        <div>
+          <strong><%= trend.label %></strong>
+          <p>Normal: <%= trend.normalRange %></p>
+        </div>
+        <div class="trend-row__value">
+          <%= trend.latest.value %> <%= trend.unit %>
+          <% if (trend.delta !== null) { %>
+            <span class="<%= trend.delta > 0 ? 'trend-up' : trend.delta < 0 ? 'trend-down' : '' %>">
+              <%= trend.delta > 0 ? '+' : '' %><%= trend.delta %>
+            </span>
+          <% } %>
+        </div>
+        <span class="badge badge--<%= trend.status === 'normal' ? 'success' : trend.status === 'high' ? 'danger' : 'warning' %>"><%= trend.status %></span>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__header">
+      <h3>Risk Score History</h3>
+      <a href="/api/v1/risk-history" class="link-sm" target="_blank">View API</a>
+    </div>
+    <div class="chart-card__body">
+      <canvas id="riskScoreChart" height="130"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__header">
+      <h3>Emergency Health Card</h3>
+      <a href="/api/v1/emergency-card" class="link-sm" target="_blank">View API</a>
+    </div>
+    <div class="emergency-card">
+      <div class="emergency-card__top">
+        <strong><%= emergencyCard.fullName || 'Profile incomplete' %></strong>
+        <span><%= emergencyCard.bloodGroup || 'Blood group not set' %></span>
+      </div>
+      <p><i class="fas fa-allergies"></i> Allergies: <%= emergencyCard.allergies?.length ? emergencyCard.allergies.join(', ') : 'None recorded' %></p>
+      <p><i class="fas fa-notes-medical"></i> Conditions: <%= emergencyCard.chronicConditions?.length ? emergencyCard.chronicConditions.join(', ') : 'None recorded' %></p>
+      <p><i class="fas fa-phone"></i> Emergency: <%= emergencyCard.emergencyContact?.name || 'Not set' %> <%= emergencyCard.emergencyContact?.phone ? '(' + emergencyCard.emergencyContact.phone + ')' : '' %></p>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="dashboard-bottom dashboard-bottom--insights">
+  <div class="recent-reports">
+    <div class="section-header-sm">
+      <h3>Health Goals</h3>
+      <a href="/api/v1/goals" class="link-sm" target="_blank">View API</a>
+    </div>
+    <form id="goalForm" class="goal-form">
+      <input class="form-input" name="title" placeholder="Lower LDL below 100" required>
+      <select class="form-input" name="metric" required>
+        <% metricOptions.forEach(metric => { %>
+          <option value="<%= metric.key %>"><%= metric.label %></option>
+        <% }) %>
+      </select>
+      <input class="form-input" name="targetValue" type="number" step="0.1" placeholder="Target" required>
+      <button class="btn btn--primary btn--sm" type="submit"><i class="fas fa-plus"></i> Add Goal</button>
+    </form>
+    <% if (goalProgress && goalProgress.length) { %>
+    <div class="goal-list" id="goalList">
+      <% goalProgress.slice(0, 5).forEach(goal => { %>
+      <div class="goal-item">
+        <div>
+          <strong><%= goal.title %></strong>
+          <p><%= goal.metricLabel %>: current <%= goal.currentValue ?? 'N/A' %> <%= goal.unit %>, target <%= goal.operator === 'gte' ? '>=' : '<=' %> <%= goal.targetValue %> <%= goal.unit %></p>
+        </div>
+        <span class="badge badge--<%= goal.achieved ? 'success' : 'info' %>"><%= goal.achieved ? 'achieved' : 'tracking' %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="chart-empty chart-empty--sm"><i class="fas fa-bullseye"></i><p>No goals yet. Add your first target above.</p></div>
+    <% } %>
+  </div>
+
+  <div class="quick-actions">
+    <h3>Health Summary</h3>
+    <a href="/reports/export/health-summary" class="quick-action quick-action--primary">
+      <i class="fas fa-file-pdf"></i><span>Download Full Summary</span>
+    </a>
+    <a href="/api/v1/health-summary" class="quick-action" target="_blank">
+      <i class="fas fa-heart-pulse"></i><span>Open Summary Data</span>
+    </a>
+    <a href="/auth/profile" class="quick-action">
+      <i class="fas fa-address-card"></i><span>Update Emergency Card</span>
+    </a>
+  </div>
+</div>
+
 <!-- Bottom: Recent Reports + Quick Actions -->
 <div class="dashboard-bottom">
   <div class="recent-reports">
@@ -167,6 +320,9 @@
     <a href="/reports/export/csv" class="quick-action">
       <i class="fas fa-file-csv"></i><span>Export Health Data (CSV)</span>
     </a>
+    <a href="/reports/export/health-summary" class="quick-action">
+      <i class="fas fa-file-pdf"></i><span>Download Health Summary</span>
+    </a>
     <a href="/auth/profile" class="quick-action">
       <i class="fas fa-user-edit"></i><span>Update Health Profile</span>
     </a>
@@ -177,6 +333,7 @@
 <script>
 const chartData = <%- chartData %>;
 const reportsByType = <%- reportsByType %>;
+const riskHistory = <%- JSON.stringify(riskHistory || []) %>;
 
 // ---- Chart defaults ----
 Chart.defaults.font.family = "'DM Sans', sans-serif";
@@ -280,6 +437,23 @@ function makeCharts() {
       },
     });
   }
+
+  // ---- Risk Score ----
+  const riskCtx = document.getElementById('riskScoreChart')?.getContext('2d');
+  if (riskCtx) {
+    new Chart(riskCtx, {
+      type: 'line',
+      data: {
+        labels: riskHistory.map(p => new Date(p.date).toLocaleDateString()),
+        datasets: [{ label: 'Risk Score', data: riskHistory.map(p => p.score), borderColor: red, backgroundColor: red + '20', fill: true, tension: 0.35, pointRadius: 3 }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { min: 0, max: 100, grid: { color: gridColor } }, x: { grid: { display: false } } },
+      },
+    });
+  }
 }
 
 makeCharts();
@@ -304,5 +478,33 @@ document.querySelectorAll('.chart-btn').forEach(btn => {
 });
 </script>
 <% } %>
+
+<script>
+const goalForm = document.getElementById('goalForm');
+if (goalForm) {
+  goalForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(goalForm);
+    const body = {
+      title: form.get('title'),
+      metric: form.get('metric'),
+      targetValue: form.get('targetValue'),
+      targetOperator: 'lte',
+    };
+    try {
+      const res = await fetch('/api/v1/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (json.success) location.reload();
+      else alert(json.message || 'Could not add goal');
+    } catch (error) {
+      alert('Could not add goal. Please try again.');
+    }
+  });
+}
+</script>
 
 <%- include('../partials/footer') %>

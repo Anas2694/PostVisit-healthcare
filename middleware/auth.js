@@ -12,6 +12,9 @@ const wantsJson = (req) =>
   req.xhr ||
   req.headers.accept?.includes('application/json');
 
+const getJwtSecret = () =>
+  process.env.JWT_SECRET || process.env.SESSION_SECRET || 'postvisit_dev_jwt_secret_change_me';
+
 /**
  * Protect routes — requires valid JWT
  */
@@ -40,7 +43,7 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id);
 
     if (!user || !user.isActive) {
@@ -70,7 +73,7 @@ const optionalAuth = async (req, res, next) => {
   let token = req.cookies.token || (req.session && req.session.token);
   if (!token) return next();
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id);
     if (user && user.isActive) {
       req.user = user;

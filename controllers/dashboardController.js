@@ -5,8 +5,17 @@
 
 const mongoose = require('mongoose');
 const Report = require('../models/Report');
-const { HealthMetrics, Notification } = require('../models/index');
+const { HealthMetrics, Notification, HealthGoal } = require('../models/index');
 const moment = require('moment');
+const {
+  buildTrendComparison,
+  buildVisualAlerts,
+  buildRiskScoreHistory,
+  buildGoalProgress,
+  buildEmergencyCard,
+  buildTimeline,
+  METRIC_CONFIG,
+} = require('../utils/healthInsights');
 
 // ========================
 // GET /dashboard
@@ -23,6 +32,7 @@ exports.getDashboard = async (req, res, next) => {
       recentMetrics,
       notifications,
       reportsByType,
+      goals,
     ] = await Promise.all([
       Report.find({ user: userId, isArchived: false })
         .populate('analysis', 'summary severity')
@@ -41,10 +51,17 @@ exports.getDashboard = async (req, res, next) => {
         { $match: { user: new mongoose.Types.ObjectId(userId), isArchived: false } },
         { $group: { _id: '$reportType', count: { $sum: 1 } } },
       ]),
+      HealthGoal.find({ user: userId }).sort({ isActive: -1, createdAt: -1 }).limit(10),
     ]);
 
     const chartData = buildChartData(recentMetrics);
     const latestMetrics = recentMetrics.length > 0 ? recentMetrics[recentMetrics.length - 1] : null;
+    const trendComparisons = buildTrendComparison(recentMetrics);
+    const visualAlerts = buildVisualAlerts(recentMetrics);
+    const riskHistory = buildRiskScoreHistory(recentMetrics, recentReports);
+    const goalProgress = buildGoalProgress(goals, recentMetrics);
+    const emergencyCard = buildEmergencyCard(req.user);
+    const timelineEvents = buildTimeline({ reports: recentReports, notifications, metrics: recentMetrics }).slice(0, 8);
 
     // Risk alerts
     const riskAlerts = [];
@@ -69,6 +86,17 @@ exports.getDashboard = async (req, res, next) => {
       riskAlerts,
       unreadCount: notifications.length,
       hasMetrics: recentMetrics.length > 0,
+      trendComparisons,
+      visualAlerts,
+      riskHistory,
+      goalProgress,
+      emergencyCard,
+      timelineEvents,
+      metricOptions: Object.entries(METRIC_CONFIG).map(([key, config]) => ({
+        key,
+        label: config.label,
+        unit: config.unit,
+      })),
     });
   } catch (error) {
     next(error);

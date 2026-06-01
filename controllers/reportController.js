@@ -12,7 +12,7 @@ const ocrService = require('../services/ocr/ocrService');
 const pdfService = require('../services/pdf/pdfService');
 const { getSignedUrl, deleteFile } = require('../config/cloudinary');
 const { stringify } = require('csv-stringify/sync');
-const { buildHealthSummaryData, buildAbnormalExplanationCards } = require('../utils/healthInsights');
+const { buildHealthSummaryData, buildAbnormalExplanationCards, buildLifestylePlan } = require('../utils/healthInsights');
 
 // GET /reports
 exports.getReports = async (req, res, next) => {
@@ -253,6 +253,8 @@ exports.getReport = async (req, res, next) => {
       title: report.title,
       report,
       signedFileUrl,
+      abnormalCards: buildAbnormalExplanationCards(report),
+      lifestylePlan: buildLifestylePlan(report, req.user),
     });
   } catch (error) {
     next(error);

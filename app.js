@@ -36,6 +36,8 @@ const { initCronJobs } = require('./services/notifications/cronService');
 const connectDB = require('./config/database');
 
 const app = express();
+const getJwtSecret = () =>
+  process.env.JWT_SECRET || process.env.SESSION_SECRET || 'postvisit_dev_jwt_secret_change_me';
 
 // ========================
 // DB CONNECTION
@@ -134,7 +136,7 @@ app.use((req, res, next) => {
     const token = req.cookies.token || req.session.token;
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, getJwtSecret());
       req.user = decoded;
       res.locals.currentUser = decoded;
     } else {

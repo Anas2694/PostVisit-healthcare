@@ -9,10 +9,10 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Report = require('../models/Report');
 const Analysis = require('../models/Analysis');
-const { Notification, HealthMetrics, Medication } = require('../models/index');
+const { Notification, HealthMetrics, Medication, HealthGoal } = require('../models/index');
 
 const connectDB = require('../config/database');
- 8
+
 const seedData = async () => {
   await connectDB();
   console.log('🌱 Starting database seed...\n');
@@ -28,6 +28,7 @@ const seedData = async () => {
       Notification.deleteMany({}),
       HealthMetrics.deleteMany({}),
       Medication.deleteMany({}),
+      HealthGoal.deleteMany({}),
     ]);
     console.log('✅ Cleared existing data');
 

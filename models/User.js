@@ -8,6 +8,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
+const getJwtSecret = () =>
+  process.env.JWT_SECRET || process.env.SESSION_SECRET || 'postvisit_dev_jwt_secret_change_me';
+
 const UserSchema = new mongoose.Schema({
   // Basic Info
   firstName: {
@@ -146,7 +149,7 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
 UserSchema.methods.getSignedJwtToken = function () {
   return jwt.sign(
     { id: this._id, role: this.role },
-    process.env.JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );
 };
